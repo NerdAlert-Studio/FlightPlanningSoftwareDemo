@@ -82,6 +82,13 @@ function setupToolbar() {
     clearGridColors();
     currentMode = null;
   });
+  document.getElementById("btn-save-data").addEventListener("click", () => {
+    saveHexData();
+  });
+  document.getElementById("btn-load-data").addEventListener("click", () => {
+    loadHexData();
+  });
+
 
   // E-value assignment buttons
   document.getElementById("btn-e10").addEventListener("click", () => {
@@ -116,6 +123,46 @@ function setupToolbar() {
   document.getElementById("btn-find-route").addEventListener("click", () => {
     findRouteWithCheckpoints();
   });
+}
+
+/************************************************
+ * 1b set up save and load data
+ ************************************************/
+function saveHexData() {
+  // 1) Convert the entire hexGrid 2D array into a JSON string.
+  const jsonData = JSON.stringify(hexGrid);
+  
+  // 2) Save it in the browser's localStorage under a key, e.g., "hexData".
+  localStorage.setItem("hexData", jsonData);
+  
+  alert("Hex data saved locally!");
+}
+
+function loadHexData() {
+  // 1) Pull the string from localStorage
+  const jsonData = localStorage.getItem("hexData");
+  
+  // 2) If nothing found, alert and return
+  if (!jsonData) {
+    alert("No saved data found in localStorage!");
+    return;
+  }
+  
+  // 3) Parse it
+  const savedGrid = JSON.parse(jsonData);
+  
+  // 4) Assign it to your hexGrid
+  // (Assumes savedGrid has the same # of rows/cols)
+  for (let r = 0; r < hexRows; r++) {
+    for (let c = 0; c < hexCols; c++) {
+      hexGrid[r][c] = savedGrid[r][c];
+    }
+  }
+  
+  // 5) Redraw the hexes to reflect the loaded data
+  reDrawFromHexGrid();
+  
+  alert("Hex data loaded from localStorage!");
 }
 
 
@@ -275,7 +322,7 @@ function colorHex(hexDiv) {
 
 
 /****************************************************************************
- * (Optional) Helpers if you only want ONE start or ONE end
+ * (Optional) Helpers if you only want ONE start or ONE end or redraw loaded data
  ****************************************************************************/
 function resetStartFlag() {
   // If you want only one "Start" hex at a time, remove any existing
@@ -298,6 +345,46 @@ function resetEndFlag() {
   }
 }
 
+function reDrawFromHexGrid() {
+  allHexCells.forEach((hexDiv) => {
+    const r = parseInt(hexDiv.dataset.row, 10);
+    const c = parseInt(hexDiv.dataset.col, 10);
+    const cell = hexGrid[r][c];
+    
+    // Decide color based on cell's data
+    if (cell.isNoGo) {
+      hexDiv.style.backgroundColor = "rgba(0,0,0,0.5)";
+    } else if (cell.isStart) {
+      hexDiv.style.backgroundColor = "rgba(0,255,0,0.5)";
+    } else if (cell.isEnd) {
+      hexDiv.style.backgroundColor = "rgba(255,0,0,0.5)";
+    } else if (cell.isCheckpoint) {
+      hexDiv.style.backgroundColor = "rgba(0,0,255,0.5)";
+    } else {
+      // If setEValue => pick color based on eValue
+      // Or default orange if eValue=10, etc.
+      switch (cell.eValue) {
+        case 10:
+          hexDiv.style.backgroundColor = "rgba(200, 255, 200, 0.9)";
+          break;
+        case 20:
+          hexDiv.style.backgroundColor = "rgba(255, 255, 150, 0.9)";
+          break;
+        case 30:
+          hexDiv.style.backgroundColor = "rgba(255, 200, 200, 0.9)";
+          break;
+        case 40:
+          hexDiv.style.backgroundColor = "rgba(150, 200, 255, 0.9)";
+          break;
+        case 50:
+          hexDiv.style.backgroundColor = "rgba(255, 150, 255, 0.9)";
+          break;
+        default:
+          hexDiv.style.backgroundColor = "rgba(255,165,0,0.5)"; // default orange
+      }
+    }
+  });
+}
 
 /****************************************************************************
  * 4. clearGridColors() - Reset everything to default
