@@ -6,8 +6,9 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Toolbar -->
   <div id="toolbar">
-    <!-- Existing Buttons -->
+    <!-- Basic Labeling Modes -->
     <button id="btn-start">Start</button>
     <button id="btn-end">End</button>
     <button id="btn-nogo">No-Go</button>
@@ -24,19 +25,30 @@
     <!-- Toggle Distance vs Energy -->
     <button id="btn-toggle-cost">Mode: Distance (D)</button>
     
+    <!-- Pathfinding Algorithm Selection -->
+    <label for="algorithm-select">Pathfinding Algorithm:</label>
+    <select id="algorithm-select">
+      <option value="dijkstra">Dijkstra's</option>
+      <option value="astar">A*</option>
+    </select>
+    
     <!-- Find Route -->
     <button id="btn-find-route">Find Route</button>
     
-    <!-- **New Save and Load Buttons** -->
+    <!-- Save and Load Buttons -->
     <button id="btn-save-data">Save Data</button>
     <button id="btn-load-data">Load Data</button>
     
-    <!-- Export Button (for later tasks) -->
-    <button id="btn-export-route">Export Route</button>
+    <!-- Export Buttons -->
+    <button id="btn-export-json">Export as JSON</button>
+    <button id="btn-export-csv">Export as CSV</button>
   </div>
   
   <!-- Map Container -->
-  <div id="map-container"></div>
+  <div id="map-container">
+    <img src="DeepLandMap.jpg" alt="Map Image" id="map-image">
+    <!-- Hex grid will overlay here -->
+  </div>
   
   <!-- Route Cost Display -->
   <div id="route-cost-display"></div>

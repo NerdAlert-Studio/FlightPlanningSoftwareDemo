@@ -1,8 +1,6 @@
 /****************************************************************************
  * GLOBALS & DATA STRUCTURES
  ****************************************************************************/
-// Global variable to store the current route path
-let currentRoutePath = [];
 
 // Current "mode" for labeling hexes or setting E-values ("start", "end", "nogo", "checkpoint", "setEValue", or null)
 let currentMode = null;
@@ -38,6 +36,11 @@ window.addEventListener("mousedown", () => {
 window.addEventListener("mouseup", () => {
   mouseIsDown = false;
 });
+
+/**
+ * Current pathfinding algorithm ('dijkstra' or 'astar')
+ */
+let currentAlgorithm = 'dijkstra'; // default to Dijkstra's
 
 /**
  * Toggle-Grid button listener.
@@ -80,24 +83,28 @@ function setupToolbar() {
   if (btnStart) {
     btnStart.addEventListener("click", () => {
       currentMode = "start";
+      setActiveButton(btnStart);
     });
   }
 
   if (btnEnd) {
     btnEnd.addEventListener("click", () => {
       currentMode = "end";
+      setActiveButton(btnEnd);
     });
   }
 
   if (btnNoGo) {
     btnNoGo.addEventListener("click", () => {
       currentMode = "nogo";
+      setActiveButton(btnNoGo);
     });
   }
 
   if (btnCheckpoint) {
     btnCheckpoint.addEventListener("click", () => {
       currentMode = "checkpoint";
+      setActiveButton(btnCheckpoint);
     });
   }
 
@@ -105,6 +112,7 @@ function setupToolbar() {
     btnClear.addEventListener("click", () => {
       clearGridColors();
       currentMode = null;
+      removeActiveButtons();
     });
   }
 
@@ -119,6 +127,7 @@ function setupToolbar() {
     btnE10.addEventListener("click", () => {
       currentMode = "setEValue";
       currentEValue = 10;
+      setActiveButton(btnE10);
     });
   }
 
@@ -126,6 +135,7 @@ function setupToolbar() {
     btnE20.addEventListener("click", () => {
       currentMode = "setEValue";
       currentEValue = 20;
+      setActiveButton(btnE20);
     });
   }
 
@@ -133,6 +143,7 @@ function setupToolbar() {
     btnE30.addEventListener("click", () => {
       currentMode = "setEValue";
       currentEValue = 30;
+      setActiveButton(btnE30);
     });
   }
 
@@ -140,6 +151,7 @@ function setupToolbar() {
     btnE40.addEventListener("click", () => {
       currentMode = "setEValue";
       currentEValue = 40;
+      setActiveButton(btnE40);
     });
   }
 
@@ -147,6 +159,7 @@ function setupToolbar() {
     btnE50.addEventListener("click", () => {
       currentMode = "setEValue";
       currentEValue = 50;
+      setActiveButton(btnE50);
     });
   }
 
@@ -156,6 +169,14 @@ function setupToolbar() {
     btnToggleCost.addEventListener("click", () => {
       useDistance = !useDistance;
       btnToggleCost.textContent = useDistance ? "Mode: Distance (D)" : "Mode: Energy (E)";
+    });
+  }
+
+  // Pathfinding Algorithm Selection
+  const algorithmSelect = document.getElementById("algorithm-select");
+  if (algorithmSelect) {
+    algorithmSelect.addEventListener("change", () => {
+      currentAlgorithm = algorithmSelect.value; // 'dijkstra' or 'astar'
     });
   }
 
@@ -183,13 +204,39 @@ function setupToolbar() {
     });
   }
 
-  // Export Button (for future tasks)
-  const btnExportRoute = document.getElementById("btn-export-route");
-  if (btnExportRoute) {
-    btnExportRoute.addEventListener("click", () => {
-      exportRouteData();
+  // Export Buttons
+  const btnExportJSON = document.getElementById("btn-export-json");
+  const btnExportCSV = document.getElementById("btn-export-csv");
+
+  if (btnExportJSON) {
+    btnExportJSON.addEventListener("click", () => {
+      exportAsJSON();
     });
   }
+
+  if (btnExportCSV) {
+    btnExportCSV.addEventListener("click", () => {
+      exportAsCSV();
+    });
+  }
+}
+
+/**
+ * Helper function to set active button styling
+ */
+function setActiveButton(activeBtn) {
+  removeActiveButtons();
+  if (activeBtn) {
+    activeBtn.classList.add("active");
+  }
+}
+
+/**
+ * Helper function to remove active styling from all buttons
+ */
+function removeActiveButtons() {
+  const buttons = document.querySelectorAll("#toolbar button");
+  buttons.forEach(btn => btn.classList.remove("active"));
 }
 
 /****************************************************************************
@@ -197,98 +244,103 @@ function setupToolbar() {
  ****************************************************************************/
 function createHexGrid() {
   const mapContainer = document.getElementById("map-container");
-  const containerWidth = mapContainer.clientWidth;
-  const containerHeight = mapContainer.clientHeight;
+  const mapImage = document.getElementById("map-image");
+  
+  // Ensure the image is loaded to get accurate dimensions
+  mapImage.onload = () => {
+    const containerWidth = mapContainer.clientWidth;
+    const containerHeight = mapContainer.clientHeight;
 
-  // For pointy-top hexes, totalHeight = cellHeight + (hexRows - 1)*0.75*cellHeight
-  // => cellHeight = containerHeight / (1 + 0.75*(hexRows - 1))
-  const cellHeight = containerHeight / (1 + 0.75 * (hexRows - 1));
-  // For pointy-top, the ratio of height to width is about 1.1547
-  const cellWidth = cellHeight / 1.1547;
+    // Use the global hexRows variable instead of declaring a new one
+    // const hexRows = 47; // Remove this line
 
-  // row-to-row and column-to-column spacing
-  const verticalSpacing = 0.8 * cellHeight;
-  const horizontalSpacing = cellWidth;
+    // Calculate the size of each hex based on container height and number of rows
+    // For pointy-up hexagons:
+    // Total vertical space = H + (R - 1) * (3/4 * H) => H * (1 + 0.75 * (R -1))
+    const cellHeight = containerHeight / (1 + 0.75 * (hexRows - 1));
+    const size = cellHeight / 2; // size is half of cellHeight
 
-  // Shift the entire grid down by 1/3 hex
-  const gridOffsetY = cellHeight / 3;
+    // Calculate width based on size
+    const cellWidth = Math.sqrt(3) * size;
 
-  // Compute columns needed
-  hexCols = Math.ceil((containerWidth - cellWidth) / horizontalSpacing) + 1;
+    // Spacing calculations
+    const horizontalSpacing = cellWidth; // Corrected from cellWidth to 1.5 * cellWidth
+    const verticalSpacing = cellHeight * 0.75; // 3/4 * H
 
-  // Initialize the hexGrid data array
-  for (let r = 0; r < hexRows; r++) {
-    hexGrid[r] = [];
-    for (let c = 0; c < hexCols; c++) {
-      hexGrid[r][c] = {
-        dValue: 150, // distance cost
-        eValue: 10,   // energy cost
-        isNoGo: false,
-        isStart: false,
-        isEnd: false,
-        isCheckpoint: false
-      };
+    // Calculate the number of columns that fit within containerWidth
+    hexCols = Math.ceil(containerWidth / horizontalSpacing) + 1; // Assign to global hexCols
+
+    console.log(`Hex Grid Dimensions: Rows = ${hexRows}, Columns = ${hexCols}`);
+
+    // Initialize the hexGrid data array
+    for (let r = 0; r < hexRows; r++) {
+      hexGrid[r] = [];
+      for (let c = 0; c < hexCols; c++) {
+        hexGrid[r][c] = {
+          dValue: 150, // distance cost
+          eValue: 10,   // energy cost
+          isNoGo: false,
+          isStart: false,
+          isEnd: false,
+          isCheckpoint: false
+        };
+      }
     }
-  }
 
-  // Create DOM elements for each hex cell
-  for (let row = 0; row < hexRows; row++) {
-    for (let col = 0; col < hexCols; col++) {
-      const hexDiv = document.createElement("div");
-      hexDiv.classList.add("hex-cell");
+    // Create DOM elements for each hex cell
+    for (let row = 0; row < hexRows; row++) {
+      for (let col = 0; col < hexCols; col++) {
+        const hexDiv = document.createElement("div");
+        hexDiv.classList.add("hex-cell");
 
-      // Store row/col in dataset so we can reference them in event handlers
-      hexDiv.dataset.row = row;
-      hexDiv.dataset.col = col;
+        // Store row/col in dataset for reference
+        hexDiv.dataset.row = row;
+        hexDiv.dataset.col = col;
 
-      // For odd rows, shift columns horizontally by half a hex width
-      const xOffset = (row % 2 === 1) ? (cellWidth / 2) : 0;
+        // Calculate horizontal offset for odd rows
+        const xOffset = (row % 2 === 1) ? (horizontalSpacing / 2) : 0;
 
-      const xPos = col * horizontalSpacing + xOffset;
-      const yPos = row * verticalSpacing + gridOffsetY;
+        const xPos = col * horizontalSpacing + xOffset;
+        const yPos = row * verticalSpacing;
 
-      // Apply sizing & positioning
-      hexDiv.style.width = `${cellWidth}px`;
-      hexDiv.style.height = `${cellHeight}px`;
-      hexDiv.style.left = `${xPos}px`;
-      hexDiv.style.top = `${yPos}px`;
+        // Apply sizing & positioning
+        hexDiv.style.width = `${cellWidth}px`;
+        hexDiv.style.height = `${cellHeight}px`;
+        hexDiv.style.left = `${xPos}px`;
+        hexDiv.style.top = `${yPos}px`;
 
-      // Basic styling
-      hexDiv.style.position = "absolute";
-      hexDiv.style.border = "1px solid #999";
-      hexDiv.style.boxSizing = "border-box";
-      hexDiv.style.cursor = "pointer";
-      hexDiv.style.backgroundColor = "rgba(255,165,0,0.5)"; // default orange
-
-      // Left-click (simple click)
-      hexDiv.addEventListener("click", () => {
-        colorHex(hexDiv);
-      });
-
-      // For DRAG painting: 
-      //   mousedown => color immediately
-      //   mouseover => color if mouseIsDown is true
-      hexDiv.addEventListener("mousedown", (e) => {
-        e.preventDefault(); // Prevent unwanted text selection
-        colorHex(hexDiv);
-      });
-      hexDiv.addEventListener("mouseover", () => {
-        if (mouseIsDown) {
+        // Event listeners
+        hexDiv.addEventListener("click", () => {
           colorHex(hexDiv);
-        }
-      });
+        });
 
-      // Right-click => show the current eValue
-      hexDiv.addEventListener("contextmenu", (e) => {
-        e.preventDefault(); // avoid default browser menu
-        const r = parseInt(hexDiv.dataset.row, 10);
-        const c = parseInt(hexDiv.dataset.col, 10);
-        alert(`E-Value for this hex: ${hexGrid[r][c].eValue}`);
-      });
+        hexDiv.addEventListener("mousedown", (e) => {
+          e.preventDefault(); // Prevent text selection
+          colorHex(hexDiv);
+        });
 
-      mapContainer.appendChild(hexDiv);
-      allHexCells.push(hexDiv);
+        hexDiv.addEventListener("mouseover", () => {
+          if (mouseIsDown) {
+            colorHex(hexDiv);
+          }
+        });
+
+        hexDiv.addEventListener("contextmenu", (e) => {
+          e.preventDefault(); // Prevent default context menu
+          const r = parseInt(hexDiv.dataset.row, 10);
+          const c = parseInt(hexDiv.dataset.col, 10);
+          alert(`E-Value for this hex: ${hexGrid[r][c].eValue}`);
+        });
+
+        mapContainer.appendChild(hexDiv);
+        allHexCells.push(hexDiv);
+      }
     }
+  };
+
+  // Trigger the onload function if the image is already cached
+  if (mapImage.complete) {
+    mapImage.onload();
   }
 }
 
@@ -304,6 +356,7 @@ function colorHex(hexDiv) {
       resetStartFlag(row, col);
       hexDiv.style.backgroundColor = "rgba(0,255,0,0.5)"; // green
       hexGrid[row][col].isStart = true;
+      console.log(`Set Start at Row: ${row}, Col: ${col}`);
       break;
 
     case "end":
@@ -450,44 +503,43 @@ function clearGridColors() {
   if (routeCost) {
     routeCost.textContent = "";
   }
+
+  // Clear the current route path
+  currentRoutePath = [];
 }
 
 /****************************************************************************
- * 5. NEIGHBOR CALCULATION (Pointy-Top Offset)
+ * 5. NEIGHBOR CALCULATION (Pointy-Top Hexagons)
  ****************************************************************************/
 function getNeighbors(r, c) {
   const neighbors = [];
 
-  // left & right
-  neighbors.push({ r, c: c - 1 });
-  neighbors.push({ r, c: c + 1 });
+  // Directions for pointy-up hexagons
+  const directions = [
+    { dr: -1, dc: 0 },  // top-right
+    { dr: -1, dc: 1 },  // top-left
+    { dr: 0, dc: 1 },   // left
+    { dr: 1, dc: 0 },   // bottom-left
+    { dr: 1, dc: -1 },  // bottom-right
+    { dr: 0, dc: -1 }   // right
+  ];
 
-  if (r % 2 === 0) {
-    // even row
-    neighbors.push({ r: r - 1, c });
-    neighbors.push({ r: r - 1, c: c - 1 });
-    neighbors.push({ r: r + 1, c });
-    neighbors.push({ r: r + 1, c: c - 1 });
-  } else {
-    // odd row
-    neighbors.push({ r: r - 1, c });
-    neighbors.push({ r: r - 1, c: c + 1 });
-    neighbors.push({ r: r + 1, c });
-    neighbors.push({ r: r + 1, c: c + 1 });
+  for (const dir of directions) {
+    const nr = r + dir.dr;
+    const nc = c + dir.dc;
+    if (nr >= 0 && nr < hexRows && nc >= 0 && nc < hexCols) {
+      neighbors.push({ r: nr, c: nc });
+    }
   }
 
-  // Filter valid in-bounds
-  return neighbors.filter(n =>
-    n.r >= 0 && n.r < hexRows &&
-    n.c >= 0 && n.c < hexCols
-  );
+  return neighbors;
 }
 
 /****************************************************************************
  * 6. DIJKSTRA PATHFINDING (DISTANCE OR ENERGY)
  ****************************************************************************/
 function dijkstraDistance(startR, startC, endR, endC) {
-  // dist & prev arrays, default Infinity
+  // Initialize distance and previous arrays
   const dist = Array.from({ length: hexRows }, () => Array(hexCols).fill(Infinity));
   const prev = Array.from({ length: hexRows }, () => Array(hexCols).fill(null));
 
@@ -499,7 +551,8 @@ function dijkstraDistance(startR, startC, endR, endC) {
   while (pq.length > 0) {
     // Sort by distance ascending
     pq.sort((a, b) => a.dist - b.dist);
-    const { r, c, dist: currentDist } = pq.shift();
+    const current = pq.shift();
+    const { r, c, dist: currentDist } = current;
 
     const id = `${r},${c}`;
     if (visited.has(id)) continue;
@@ -531,7 +584,88 @@ function dijkstraDistance(startR, startC, endR, endC) {
 }
 
 /****************************************************************************
- * 7. RECONSTRUCT PATH FROM PREV[][]
+ * 7. A* PATHFINDING (DISTANCE OR ENERGY)
+ ****************************************************************************/
+/**
+ * Converts offset coordinates (row, col) to cube coordinates (x, y, z).
+ * This is necessary for accurate distance calculations in hex grids.
+ */
+function offsetToCube(r, c) {
+  const x = c - Math.floor(r / 2);
+  const z = r;
+  const y = -x - z;
+  return { x, y, z };
+}
+
+/**
+ * Calculates the hex distance between two cells using cube coordinates.
+ */
+function hexDistance(r1, c1, r2, c2) {
+  const a = offsetToCube(r1, c1);
+  const b = offsetToCube(r2, c2);
+  return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y), Math.abs(a.z - b.z));
+}
+
+/**
+ * Implements the A* pathfinding algorithm.
+ * @param {number} startR - Starting row.
+ * @param {number} startC - Starting column.
+ * @param {number} endR - Ending row.
+ * @param {number} endC - Ending column.
+ * @returns {Object} - Contains 'dist' and 'prev' arrays.
+ */
+function aStar(startR, startC, endR, endC) {
+  // Initialize distance and previous arrays
+  const dist = Array.from({ length: hexRows }, () => Array(hexCols).fill(Infinity));
+  const prev = Array.from({ length: hexRows }, () => Array(hexCols).fill(null));
+
+  dist[startR][startC] = 0;
+
+  // Priority Queue implemented as an array for simplicity
+  // Each element is an object { r, c, f }
+  const openSet = [{ r: startR, c: startC, f: hexDistance(startR, startC, endR, endC) }];
+
+  // To keep track of visited nodes
+  const closedSet = new Set();
+
+  while (openSet.length > 0) {
+    // Sort the open set by f value (f = g + h) and select the node with the lowest f
+    openSet.sort((a, b) => a.f - b.f);
+    const current = openSet.shift();
+    const { r, c } = current;
+    const currentId = `${r},${c}`;
+
+    if (closedSet.has(currentId)) continue;
+    closedSet.add(currentId);
+
+    // If we've reached the end, we can stop
+    if (r === endR && c === endC) {
+      break;
+    }
+
+    // Explore neighbors
+    const neighbors = getNeighbors(r, c);
+    for (const neighbor of neighbors) {
+      const { r: nr, c: nc } = neighbor;
+
+      if (hexGrid[nr][nc].isNoGo) continue; // Skip blocked cells
+
+      const tentativeG = dist[r][c] + (useDistance ? hexGrid[nr][nc].dValue : hexGrid[nr][nc].eValue);
+
+      if (tentativeG < dist[nr][nc]) {
+        dist[nr][nc] = tentativeG;
+        prev[nr][nc] = { r, c };
+        const f = tentativeG + hexDistance(nr, nc, endR, endC);
+        openSet.push({ r: nr, c: nc, f });
+      }
+    }
+  }
+
+  return { dist, prev };
+}
+
+/****************************************************************************
+ * 8. RECONSTRUCT PATH FROM PREV[][]
  ****************************************************************************/
 function reconstructPath(dist, prev, endR, endC) {
   // If we never found a path, dist is Infinity
@@ -551,9 +685,11 @@ function reconstructPath(dist, prev, endR, endC) {
 }
 
 /****************************************************************************
- * 8. MULTI-SEGMENT ROUTE (CHECKPOINTS)
+ * 9. MULTI-SEGMENT ROUTE (CHECKPOINTS)
  *    i.e. Start -> C1 -> C2 -> ... -> End
  ****************************************************************************/
+let currentRoutePath = []; // Global variable to store the current route path
+
 function findRouteWithCheckpoints() {
   const routeCostDisplay = document.getElementById("route-cost-display");
   if (routeCostDisplay) {
@@ -571,13 +707,16 @@ function findRouteWithCheckpoints() {
       if (cell.isStart) {
         startR = r;
         startC = c;
+        console.log(`Found Start at Row: ${r}, Col: ${c}`);
       }
       if (cell.isEnd) {
         endR = r;
         endC = c;
+        console.log(`Found End at Row: ${r}, Col: ${c}`);
       }
       if (cell.isCheckpoint) {
         checkpoints.push({ r, c });
+        console.log(`Found Checkpoint at Row: ${r}, Col: ${c}`);
       }
     }
   }
@@ -602,8 +741,14 @@ function findRouteWithCheckpoints() {
     const s = waypoints[i];
     const t = waypoints[i + 1];
 
-    // Run Dijkstra for s -> t
-    const { dist, prev } = dijkstraDistance(s.r, s.c, t.r, t.c);
+    let result;
+    if (currentAlgorithm === 'dijkstra') {
+      result = dijkstraDistance(s.r, s.c, t.r, t.c);
+    } else if (currentAlgorithm === 'astar') {
+      result = aStar(s.r, s.c, t.r, t.c);
+    }
+
+    const { dist, prev } = result;
     const segmentPath = reconstructPath(dist, prev, t.r, t.c);
 
     if (!segmentPath) {
@@ -636,7 +781,7 @@ function findRouteWithCheckpoints() {
 }
 
 /****************************************************************************
- * 9. HIGHLIGHT THE FINAL PATH
+ * 10. HIGHLIGHT THE FINAL PATH
  ****************************************************************************/
 function highlightPath(path) {
   if (!path || path.length === 0) return;
@@ -668,7 +813,7 @@ function highlightPath(path) {
 }
 
 /****************************************************************************
- * 10. SAVE AND LOAD DATA FUNCTIONS
+ * 11. SAVE AND LOAD DATA FUNCTIONS
  ****************************************************************************/
 
 /**
@@ -768,7 +913,7 @@ function reDrawFromHexGrid() {
 }
 
 /****************************************************************************
- * 11. EXPORT ROUTE DATA FUNCTION
+ * 12. EXPORT ROUTE DATA FUNCTION
  ****************************************************************************/
 function exportRouteData() {
   if (!currentRoutePath || currentRoutePath.length === 0) {
@@ -807,16 +952,17 @@ function exportAsJSON() {
  * Helper function to export the route as a CSV file
  */
 function exportAsCSV() {
-  let csvContent = "data:text/csv;charset=utf-8,Row,Column\n";
+  let csvContent = "Row,Column\n";
 
   currentRoutePath.forEach(cell => {
     csvContent += `${cell.r},${cell.c}\n`;
   });
 
-  // Optionally, include total cost
+  // Include total cost
   csvContent += `Total Cost,${calculateTotalCost(currentRoutePath)}\n`;
 
-  const encodedUri = encodeURI(csvContent);
+  // Properly encode the CSV content
+  const encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
   triggerDownload(encodedUri, "route.csv");
 }
 
@@ -846,4 +992,57 @@ function triggerDownload(url, filename) {
   a.click();
   document.body.removeChild(a);
   alert(`Route exported as ${filename}!`);
+}
+
+/****************************************************************************
+ * 13. A* PATHFINDING (DISTANCE OR ENERGY)
+ ****************************************************************************/
+function aStar(startR, startC, endR, endC) {
+  // Initialize distance and previous arrays
+  const dist = Array.from({ length: hexRows }, () => Array(hexCols).fill(Infinity));
+  const prev = Array.from({ length: hexRows }, () => Array(hexCols).fill(null));
+
+  dist[startR][startC] = 0;
+
+  // Priority Queue implemented as an array for simplicity
+  // Each element is an object { r, c, f }
+  const openSet = [{ r: startR, c: startC, f: hexDistance(startR, startC, endR, endC) }];
+
+  // To keep track of visited nodes
+  const closedSet = new Set();
+
+  while (openSet.length > 0) {
+    // Sort the open set by f value (f = g + h) and select the node with the lowest f
+    openSet.sort((a, b) => a.f - b.f);
+    const current = openSet.shift();
+    const { r, c } = current;
+    const currentId = `${r},${c}`;
+
+    if (closedSet.has(currentId)) continue;
+    closedSet.add(currentId);
+
+    // If we've reached the end, we can stop
+    if (r === endR && c === endC) {
+      break;
+    }
+
+    // Explore neighbors
+    const neighbors = getNeighbors(r, c);
+    for (const neighbor of neighbors) {
+      const { r: nr, c: nc } = neighbor;
+
+      if (hexGrid[nr][nc].isNoGo) continue; // Skip blocked cells
+
+      const tentativeG = dist[r][c] + (useDistance ? hexGrid[nr][nc].dValue : hexGrid[nr][nc].eValue);
+
+      if (tentativeG < dist[nr][nc]) {
+        dist[nr][nc] = tentativeG;
+        prev[nr][nc] = { r, c };
+        const f = tentativeG + hexDistance(nr, nc, endR, endC);
+        openSet.push({ r: nr, c: nc, f });
+      }
+    }
+  }
+
+  return { dist, prev };
 }
