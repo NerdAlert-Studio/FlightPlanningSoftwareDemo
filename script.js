@@ -1,6 +1,8 @@
 /****************************************************************************
  * GLOBALS & DATA STRUCTURES
  ****************************************************************************/
+// Global variable to store the current route path
+let currentRoutePath = [];
 
 // Current "mode" for labeling hexes or setting E-values ("start", "end", "nogo", "checkpoint", "setEValue", or null)
 let currentMode = null;
@@ -639,6 +641,17 @@ function findRouteWithCheckpoints() {
 function highlightPath(path) {
   if (!path || path.length === 0) return;
 
+  // Clear previous highlights
+  allHexCells.forEach(hexDiv => {
+    const r = parseInt(hexDiv.dataset.row, 10);
+    const c = parseInt(hexDiv.dataset.col, 10);
+    const cell = hexGrid[r][c];
+    resetHexColor(hexDiv, r, c);
+  });
+
+  // Store the current route path
+  currentRoutePath = path;
+
   // Use one color for distance, another for energy
   const pathColor = useDistance
     ? "rgba(255, 255, 0, 0.6)"   // yellow
@@ -755,9 +768,82 @@ function reDrawFromHexGrid() {
 }
 
 /****************************************************************************
- * 11. EXPORT ROUTE DATA FUNCTION (For Future Tasks)
+ * 11. EXPORT ROUTE DATA FUNCTION
  ****************************************************************************/
 function exportRouteData() {
-  // Placeholder for export functionality
-  alert("Export functionality not yet implemented.");
+  if (!currentRoutePath || currentRoutePath.length === 0) {
+    alert("No route to export! Please calculate a route first.");
+    return;
+  }
+
+  // Prompt the user to choose between JSON and CSV
+  const exportFormat = prompt("Enter export format: 'json' or 'csv'").toLowerCase();
+
+  if (exportFormat === "json") {
+    exportAsJSON();
+  } else if (exportFormat === "csv") {
+    exportAsCSV();
+  } else {
+    alert("Invalid format! Please enter 'json' or 'csv'.");
+  }
+}
+
+/**
+ * Helper function to export the route as a JSON file
+ */
+function exportAsJSON() {
+  const routeData = {
+    path: currentRoutePath,
+    totalCost: calculateTotalCost(currentRoutePath)
+  };
+
+  const jsonString = JSON.stringify(routeData, null, 2);
+  const blob = new Blob([jsonString], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  triggerDownload(url, "route.json");
+}
+
+/**
+ * Helper function to export the route as a CSV file
+ */
+function exportAsCSV() {
+  let csvContent = "data:text/csv;charset=utf-8,Row,Column\n";
+
+  currentRoutePath.forEach(cell => {
+    csvContent += `${cell.r},${cell.c}\n`;
+  });
+
+  // Optionally, include total cost
+  csvContent += `Total Cost,${calculateTotalCost(currentRoutePath)}\n`;
+
+  const encodedUri = encodeURI(csvContent);
+  triggerDownload(encodedUri, "route.csv");
+}
+
+/**
+ * Helper function to calculate total cost of the route
+ * Assumes that the total cost has been calculated in findRouteWithCheckpoints
+ */
+function calculateTotalCost(path) {
+  let cost = 0;
+  for (let i = 0; i < path.length; i++) {
+    const r = path[i].r;
+    const c = path[i].c;
+    // Add the cost of the current cell
+    cost += useDistance ? hexGrid[r][c].dValue : hexGrid[r][c].eValue;
+  }
+  return cost;
+}
+
+/**
+ * Helper function to trigger the download of a file
+ */
+function triggerDownload(url, filename) {
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  alert(`Route exported as ${filename}!`);
 }
