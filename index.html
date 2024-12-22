@@ -1,47 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Hex Grid Flight Planning</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Flight Planning Tool</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <!-- Toolbar with all our buttons -->
   <div id="toolbar">
-    <!-- Labeling / mode buttons -->
-    <button id="btn-start">Set Start (Green)</button>
-    <button id="btn-end">Set End (Red)</button>
-    <button id="btn-nogo">Set No-Go (Black)</button>
-    <button id="btn-checkpoint">Set Checkpoint (Blue)</button>
+    <!-- Existing Buttons -->
+    <button id="btn-start">Start</button>
+    <button id="btn-end">End</button>
+    <button id="btn-nogo">No-Go</button>
+    <button id="btn-checkpoint">Checkpoint</button>
     <button id="btn-clear">Clear</button>
-
-    <!-- E-Value assignment buttons -->
-    <button id="btn-e10">Set E=10</button>
-    <button id="btn-e20">Set E=20</button>
-    <button id="btn-e30">Set E=30</button>
-    <button id="btn-e40">Set E=40</button>
-    <button id="btn-e50">Set E=50</button>
-
-
-    <!-- Toggle cost & pathfinding -->
+    
+    <!-- E-value Assignment Buttons -->
+    <button id="btn-e10">E=10</button>
+    <button id="btn-e20">E=20</button>
+    <button id="btn-e30">E=30</button>
+    <button id="btn-e40">E=40</button>
+    <button id="btn-e50">E=50</button>
+    
+    <!-- Toggle Distance vs Energy -->
     <button id="btn-toggle-cost">Mode: Distance (D)</button>
+    
+    <!-- Find Route -->
     <button id="btn-find-route">Find Route</button>
-    <!-- Toggle grid -->
-    <button id="btn-toggle-grid">Hide Grid</button>
-
-    <!--Save Load EValues-->
+    
+    <!-- **New Save and Load Buttons** -->
     <button id="btn-save-data">Save Data</button>
     <button id="btn-load-data">Load Data</button>
     
-
-    <!-- Display total route cost -->
-    <span id="route-cost-display"></span>
+    <!-- Export Button (for later tasks) -->
+    <button id="btn-export-route">Export Route</button>
   </div>
-
-  <!-- Container for the map and the hex grid -->
+  
+  <!-- Map Container -->
   <div id="map-container"></div>
-
+  
+  <!-- Route Cost Display -->
+  <div id="route-cost-display"></div>
+  
+  <!-- Include JavaScript -->
   <script src="script.js"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 /****************************************************************************
  * GLOBALS & DATA STRUCTURES
  ****************************************************************************/
- 
+
 // Current "mode" for labeling hexes or setting E-values ("start", "end", "nogo", "checkpoint", "setEValue", or null)
 let currentMode = null;
 
@@ -11,8 +11,8 @@ let useDistance = true; // default = distance mode
 // If we're in "setEValue" mode, which value are we assigning? (10,20,30,40,50)
 let currentEValue = 10;
 
-// Our grid data structure. 
-//   hexGrid[row][col] => { dValue, eValue, isNoGo, isStart, isEnd, isCheckpoint, etc. }
+// Our grid data structure.
+// hexGrid[row][col] => { dValue, eValue, isNoGo, isStart, isEnd, isCheckpoint, etc. }
 let hexGrid = [];
 
 // We'll keep references to all hex <div>s for quick clearing and toggling.
@@ -25,7 +25,7 @@ let hexCols = 0;
 // Whether the grid (hex <div>s) is visible or hidden
 let gridVisible = true;
 
-/** 
+/**
  * Global variable to track if the mouse button is currently held down (for drag).
  * We attach event listeners on the window so we always track mouse-up/down anywhere.
  */
@@ -37,20 +37,24 @@ window.addEventListener("mouseup", () => {
   mouseIsDown = false;
 });
 
-/** 
+/**
  * Toggle-Grid button listener.
  * Only shows/hides the hex cells, does NOT handle mouseIsDown logic anymore.
  */
-document.getElementById("btn-toggle-grid").addEventListener("click", () => {
-  gridVisible = !gridVisible;
-  document.getElementById("btn-toggle-grid").textContent = gridVisible ? "Hide Grid" : "Show Grid";
+document.addEventListener("DOMContentLoaded", () => {
+  const toggleGridButton = document.getElementById("btn-toggle-grid");
+  if (toggleGridButton) {
+    toggleGridButton.addEventListener("click", () => {
+      gridVisible = !gridVisible;
+      toggleGridButton.textContent = gridVisible ? "Hide Grid" : "Show Grid";
 
-  // Show or hide all hex cells
-  allHexCells.forEach((hexDiv) => {
-    hexDiv.style.display = gridVisible ? "block" : "none";
-  });
+      // Show or hide all hex cells
+      allHexCells.forEach((hexDiv) => {
+        hexDiv.style.display = gridVisible ? "block" : "none";
+      });
+    });
+  }
 });
-
 
 /****************************************************************************
  * WINDOW ONLOAD - SETUP
@@ -60,111 +64,131 @@ window.onload = () => {
   createHexGrid();
 };
 
-
 /****************************************************************************
  * 1. SETUP TOOLBAR BUTTONS
  ****************************************************************************/
 function setupToolbar() {
   // Basic labeling modes
-  document.getElementById("btn-start").addEventListener("click", () => {
-    currentMode = "start";
-  });
-  document.getElementById("btn-end").addEventListener("click", () => {
-    currentMode = "end";
-  });
-  document.getElementById("btn-nogo").addEventListener("click", () => {
-    currentMode = "nogo";
-  });
-  document.getElementById("btn-checkpoint").addEventListener("click", () => {
-    currentMode = "checkpoint";
-  });
-  document.getElementById("btn-clear").addEventListener("click", () => {
-    clearGridColors();
-    currentMode = null;
-  });
-  document.getElementById("btn-save-data").addEventListener("click", () => {
-    saveHexData();
-  });
-  document.getElementById("btn-load-data").addEventListener("click", () => {
-    loadHexData();
-  });
+  const btnStart = document.getElementById("btn-start");
+  const btnEnd = document.getElementById("btn-end");
+  const btnNoGo = document.getElementById("btn-nogo");
+  const btnCheckpoint = document.getElementById("btn-checkpoint");
+  const btnClear = document.getElementById("btn-clear");
 
+  if (btnStart) {
+    btnStart.addEventListener("click", () => {
+      currentMode = "start";
+    });
+  }
+
+  if (btnEnd) {
+    btnEnd.addEventListener("click", () => {
+      currentMode = "end";
+    });
+  }
+
+  if (btnNoGo) {
+    btnNoGo.addEventListener("click", () => {
+      currentMode = "nogo";
+    });
+  }
+
+  if (btnCheckpoint) {
+    btnCheckpoint.addEventListener("click", () => {
+      currentMode = "checkpoint";
+    });
+  }
+
+  if (btnClear) {
+    btnClear.addEventListener("click", () => {
+      clearGridColors();
+      currentMode = null;
+    });
+  }
 
   // E-value assignment buttons
-  document.getElementById("btn-e10").addEventListener("click", () => {
-    currentMode = "setEValue";
-    currentEValue = 10;
-  });
-  document.getElementById("btn-e20").addEventListener("click", () => {
-    currentMode = "setEValue";
-    currentEValue = 20;
-  });
-  document.getElementById("btn-e30").addEventListener("click", () => {
-    currentMode = "setEValue";
-    currentEValue = 30;
-  });
-  document.getElementById("btn-e40").addEventListener("click", () => {
-    currentMode = "setEValue";
-    currentEValue = 40;
-  });
-  document.getElementById("btn-e50").addEventListener("click", () => {
-    currentMode = "setEValue";
-    currentEValue = 50;
-  });
+  const btnE10 = document.getElementById("btn-e10");
+  const btnE20 = document.getElementById("btn-e20");
+  const btnE30 = document.getElementById("btn-e30");
+  const btnE40 = document.getElementById("btn-e40");
+  const btnE50 = document.getElementById("btn-e50");
+
+  if (btnE10) {
+    btnE10.addEventListener("click", () => {
+      currentMode = "setEValue";
+      currentEValue = 10;
+    });
+  }
+
+  if (btnE20) {
+    btnE20.addEventListener("click", () => {
+      currentMode = "setEValue";
+      currentEValue = 20;
+    });
+  }
+
+  if (btnE30) {
+    btnE30.addEventListener("click", () => {
+      currentMode = "setEValue";
+      currentEValue = 30;
+    });
+  }
+
+  if (btnE40) {
+    btnE40.addEventListener("click", () => {
+      currentMode = "setEValue";
+      currentEValue = 40;
+    });
+  }
+
+  if (btnE50) {
+    btnE50.addEventListener("click", () => {
+      currentMode = "setEValue";
+      currentEValue = 50;
+    });
+  }
 
   // Toggle Distance vs Energy
-  document.getElementById("btn-toggle-cost").addEventListener("click", () => {
-    useDistance = !useDistance;
-    const btn = document.getElementById("btn-toggle-cost");
-    btn.textContent = useDistance ? "Mode: Distance (D)" : "Mode: Energy (E)";
-  });
-
-  // Find Route (Dijkstra with checkpoints)
-  document.getElementById("btn-find-route").addEventListener("click", () => {
-    findRouteWithCheckpoints();
-  });
-}
-
-/************************************************
- * 1b set up save and load data
- ************************************************/
-function saveHexData() {
-  // 1) Convert the entire hexGrid 2D array into a JSON string.
-  const jsonData = JSON.stringify(hexGrid);
-  
-  // 2) Save it in the browser's localStorage under a key, e.g., "hexData".
-  localStorage.setItem("hexData", jsonData);
-  
-  alert("Hex data saved locally!");
-}
-
-function loadHexData() {
-  // 1) Pull the string from localStorage
-  const jsonData = localStorage.getItem("hexData");
-  
-  // 2) If nothing found, alert and return
-  if (!jsonData) {
-    alert("No saved data found in localStorage!");
-    return;
+  const btnToggleCost = document.getElementById("btn-toggle-cost");
+  if (btnToggleCost) {
+    btnToggleCost.addEventListener("click", () => {
+      useDistance = !useDistance;
+      btnToggleCost.textContent = useDistance ? "Mode: Distance (D)" : "Mode: Energy (E)";
+    });
   }
-  
-  // 3) Parse it
-  const savedGrid = JSON.parse(jsonData);
-  
-  // 4) Assign it to your hexGrid
-  // (Assumes savedGrid has the same # of rows/cols)
-  for (let r = 0; r < hexRows; r++) {
-    for (let c = 0; c < hexCols; c++) {
-      hexGrid[r][c] = savedGrid[r][c];
-    }
-  }
-  
-  // 5) Redraw the hexes to reflect the loaded data
-  reDrawFromHexGrid();
-  
-  alert("Hex data loaded from localStorage!");
-}
 
+  // Find Route
+  const btnFindRoute = document.getElementById("btn-find-route");
+  if (btnFindRoute) {
+    btnFindRoute.addEventListener("click", () => {
+      findRouteWithCheckpoints();
+    });
+  }
+
+  // Save and Load Buttons
+  const btnSaveData = document.getElementById("btn-save-data");
+  const btnLoadData = document.getElementById("btn-load-data");
+
+  if (btnSaveData) {
+    btnSaveData.addEventListener("click", () => {
+      saveHexData();
+    });
+  }
+
+  if (btnLoadData) {
+    btnLoadData.addEventListener("click", () => {
+      loadHexData();
+    });
+  }
+
+  // Export Button (for future tasks)
+  const btnExportRoute = document.getElementById("btn-export-route");
+  if (btnExportRoute) {
+    btnExportRoute.addEventListener("click", () => {
+      exportRouteData();
+    });
+  }
+}
 
 /****************************************************************************
  * 2. CREATE THE HEX GRID (DOM + DATA)
@@ -178,7 +202,7 @@ function createHexGrid() {
   // => cellHeight = containerHeight / (1 + 0.75*(hexRows - 1))
   const cellHeight = containerHeight / (1 + 0.75 * (hexRows - 1));
   // For pointy-top, the ratio of height to width is about 1.1547
-  const cellWidth  = cellHeight / 1.1547;
+  const cellWidth = cellHeight / 1.1547;
 
   // row-to-row and column-to-column spacing
   const verticalSpacing = 0.8 * cellHeight;
@@ -195,8 +219,8 @@ function createHexGrid() {
     hexGrid[r] = [];
     for (let c = 0; c < hexCols; c++) {
       hexGrid[r][c] = {
-        dValue: 150,       // distance cost
-        eValue: 10,        // energy cost
+        dValue: 150, // distance cost
+        eValue: 10,   // energy cost
         isNoGo: false,
         isStart: false,
         isEnd: false,
@@ -225,7 +249,14 @@ function createHexGrid() {
       hexDiv.style.width = `${cellWidth}px`;
       hexDiv.style.height = `${cellHeight}px`;
       hexDiv.style.left = `${xPos}px`;
-      hexDiv.style.top  = `${yPos}px`;
+      hexDiv.style.top = `${yPos}px`;
+
+      // Basic styling
+      hexDiv.style.position = "absolute";
+      hexDiv.style.border = "1px solid #999";
+      hexDiv.style.boxSizing = "border-box";
+      hexDiv.style.cursor = "pointer";
+      hexDiv.style.backgroundColor = "rgba(255,165,0,0.5)"; // default orange
 
       // Left-click (simple click)
       hexDiv.addEventListener("click", () => {
@@ -235,7 +266,8 @@ function createHexGrid() {
       // For DRAG painting: 
       //   mousedown => color immediately
       //   mouseover => color if mouseIsDown is true
-      hexDiv.addEventListener("mousedown", () => {
+      hexDiv.addEventListener("mousedown", (e) => {
+        e.preventDefault(); // Prevent unwanted text selection
         colorHex(hexDiv);
       });
       hexDiv.addEventListener("mouseover", () => {
@@ -258,7 +290,6 @@ function createHexGrid() {
   }
 }
 
-
 /****************************************************************************
  * 3. colorHex() - Applies the current mode to the hex
  ****************************************************************************/
@@ -268,14 +299,14 @@ function colorHex(hexDiv) {
 
   switch (currentMode) {
     case "start":
+      resetStartFlag(row, col);
       hexDiv.style.backgroundColor = "rgba(0,255,0,0.5)"; // green
-      resetStartFlag();
       hexGrid[row][col].isStart = true;
       break;
 
     case "end":
+      resetEndFlag(row, col);
       hexDiv.style.backgroundColor = "rgba(255,0,0,0.5)"; // red
-      resetEndFlag();
       hexGrid[row][col].isEnd = true;
       break;
 
@@ -315,75 +346,81 @@ function colorHex(hexDiv) {
       break;
 
     default:
-      // no mode or unrecognized
+      // No mode or unrecognized
       break;
   }
 }
 
-
 /****************************************************************************
- * (Optional) Helpers if you only want ONE start or ONE end or redraw loaded data
+ * (Optional) Helpers if you only want ONE start or ONE end
  ****************************************************************************/
-function resetStartFlag() {
-  // If you want only one "Start" hex at a time, remove any existing
+function resetStartFlag(currentRow, currentCol) {
+  // Ensure only one "Start" hex at a time
   for (let r = 0; r < hexRows; r++) {
     for (let c = 0; c < hexCols; c++) {
-      if (hexGrid[r][c].isStart) {
+      if (hexGrid[r][c].isStart && !(r === currentRow && c === currentCol)) {
         hexGrid[r][c].isStart = false;
-      }
-    }
-  }
-}
-function resetEndFlag() {
-  // If you want only one "End" hex
-  for (let r = 0; r < hexRows; r++) {
-    for (let c = 0; c < hexCols; c++) {
-      if (hexGrid[r][c].isEnd) {
-        hexGrid[r][c].isEnd = false;
+        // Update the UI
+        const hexDiv = document.querySelector(`.hex-cell[data-row='${r}'][data-col='${c}']`);
+        if (hexDiv) {
+          resetHexColor(hexDiv, r, c);
+        }
       }
     }
   }
 }
 
-function reDrawFromHexGrid() {
-  allHexCells.forEach((hexDiv) => {
-    const r = parseInt(hexDiv.dataset.row, 10);
-    const c = parseInt(hexDiv.dataset.col, 10);
-    const cell = hexGrid[r][c];
-    
-    // Decide color based on cell's data
-    if (cell.isNoGo) {
-      hexDiv.style.backgroundColor = "rgba(0,0,0,0.5)";
-    } else if (cell.isStart) {
-      hexDiv.style.backgroundColor = "rgba(0,255,0,0.5)";
-    } else if (cell.isEnd) {
-      hexDiv.style.backgroundColor = "rgba(255,0,0,0.5)";
-    } else if (cell.isCheckpoint) {
-      hexDiv.style.backgroundColor = "rgba(0,0,255,0.5)";
-    } else {
-      // If setEValue => pick color based on eValue
-      // Or default orange if eValue=10, etc.
-      switch (cell.eValue) {
-        case 10:
-          hexDiv.style.backgroundColor = "rgba(200, 255, 200, 0.9)";
-          break;
-        case 20:
-          hexDiv.style.backgroundColor = "rgba(255, 255, 150, 0.9)";
-          break;
-        case 30:
-          hexDiv.style.backgroundColor = "rgba(255, 200, 200, 0.9)";
-          break;
-        case 40:
-          hexDiv.style.backgroundColor = "rgba(150, 200, 255, 0.9)";
-          break;
-        case 50:
-          hexDiv.style.backgroundColor = "rgba(255, 150, 255, 0.9)";
-          break;
-        default:
-          hexDiv.style.backgroundColor = "rgba(255,165,0,0.5)"; // default orange
+function resetEndFlag(currentRow, currentCol) {
+  // Ensure only one "End" hex at a time
+  for (let r = 0; r < hexRows; r++) {
+    for (let c = 0; c < hexCols; c++) {
+      if (hexGrid[r][c].isEnd && !(r === currentRow && c === currentCol)) {
+        hexGrid[r][c].isEnd = false;
+        // Update the UI
+        const hexDiv = document.querySelector(`.hex-cell[data-row='${r}'][data-col='${c}']`);
+        if (hexDiv) {
+          resetHexColor(hexDiv, r, c);
+        }
       }
     }
-  });
+  }
+}
+
+/**
+ * Helper to reset hex color based on its current state
+ */
+function resetHexColor(hexDiv, r, c) {
+  const cell = hexGrid[r][c];
+  if (cell.isNoGo) {
+    hexDiv.style.backgroundColor = "rgba(0,0,0,0.5)";
+  } else if (cell.isStart) {
+    hexDiv.style.backgroundColor = "rgba(0,255,0,0.5)";
+  } else if (cell.isEnd) {
+    hexDiv.style.backgroundColor = "rgba(255,0,0,0.5)";
+  } else if (cell.isCheckpoint) {
+    hexDiv.style.backgroundColor = "rgba(0,0,255,0.5)";
+  } else {
+    // Set color based on eValue
+    switch (cell.eValue) {
+      case 10:
+        hexDiv.style.backgroundColor = "rgba(200, 255, 200, 0.9)";
+        break;
+      case 20:
+        hexDiv.style.backgroundColor = "rgba(255, 255, 150, 0.9)";
+        break;
+      case 30:
+        hexDiv.style.backgroundColor = "rgba(255, 200, 200, 0.9)";
+        break;
+      case 40:
+        hexDiv.style.backgroundColor = "rgba(150, 200, 255, 0.9)";
+        break;
+      case 50:
+        hexDiv.style.backgroundColor = "rgba(255, 150, 255, 0.9)";
+        break;
+      default:
+        hexDiv.style.backgroundColor = "rgba(255,165,0,0.5)"; // default orange
+    }
+  }
 }
 
 /****************************************************************************
@@ -412,7 +449,6 @@ function clearGridColors() {
     routeCost.textContent = "";
   }
 }
-
 
 /****************************************************************************
  * 5. NEIGHBOR CALCULATION (Pointy-Top Offset)
@@ -444,7 +480,6 @@ function getNeighbors(r, c) {
     n.c >= 0 && n.c < hexCols
   );
 }
-
 
 /****************************************************************************
  * 6. DIJKSTRA PATHFINDING (DISTANCE OR ENERGY)
@@ -493,7 +528,6 @@ function dijkstraDistance(startR, startC, endR, endC) {
   return { dist, prev };
 }
 
-
 /****************************************************************************
  * 7. RECONSTRUCT PATH FROM PREV[][]
  ****************************************************************************/
@@ -513,7 +547,6 @@ function reconstructPath(dist, prev, endR, endC) {
   }
   return path.reverse();
 }
-
 
 /****************************************************************************
  * 8. MULTI-SEGMENT ROUTE (CHECKPOINTS)
@@ -600,7 +633,6 @@ function findRouteWithCheckpoints() {
   }
 }
 
-
 /****************************************************************************
  * 9. HIGHLIGHT THE FINAL PATH
  ****************************************************************************/
@@ -620,4 +652,112 @@ function highlightPath(path) {
       hexDiv.style.backgroundColor = pathColor;
     }
   }
+}
+
+/****************************************************************************
+ * 10. SAVE AND LOAD DATA FUNCTIONS
+ ****************************************************************************/
+
+/**
+ * Save the current hexGrid data to localStorage
+ */
+function saveHexData() {
+  // Convert the entire hexGrid 2D array into a JSON string.
+  const jsonData = JSON.stringify(hexGrid);
+  
+  // Save it in the browser's localStorage under a key, e.g., "hexData".
+  localStorage.setItem("hexData", jsonData);
+  
+  alert("Hex data saved locally!");
+}
+
+/**
+ * Load the hexGrid data from localStorage
+ */
+function loadHexData() {
+  // Pull the string from localStorage
+  const jsonData = localStorage.getItem("hexData");
+  
+  // If nothing found, alert and return
+  if (!jsonData) {
+    alert("No saved data found in localStorage!");
+    return;
+  }
+  
+  // Parse it
+  const savedGrid = JSON.parse(jsonData);
+  
+  // Validate the savedGrid structure
+  if (!Array.isArray(savedGrid) || savedGrid.length !== hexRows) {
+    alert("Saved data is invalid or incompatible!");
+    return;
+  }
+
+  // Assign it to your hexGrid
+  // (Assumes savedGrid has the same rows and cols)
+  for (let r = 0; r < hexRows; r++) {
+    if (!Array.isArray(savedGrid[r]) || savedGrid[r].length !== hexCols) {
+      alert("Saved data is invalid or incompatible!");
+      return;
+    }
+    for (let c = 0; c < hexCols; c++) {
+      hexGrid[r][c] = savedGrid[r][c];
+    }
+  }
+  
+  // Redraw the hexes to reflect the loaded data
+  reDrawFromHexGrid();
+  
+  alert("Hex data loaded from localStorage!");
+}
+
+/**
+ * Re-draw the hexes based on the current hexGrid data
+ */
+function reDrawFromHexGrid() {
+  allHexCells.forEach((hexDiv) => {
+    const r = parseInt(hexDiv.dataset.row, 10);
+    const c = parseInt(hexDiv.dataset.col, 10);
+    const cell = hexGrid[r][c];
+
+    // Decide color based on cell's data
+    if (cell.isNoGo) {
+      hexDiv.style.backgroundColor = "rgba(0,0,0,0.5)";
+    } else if (cell.isStart) {
+      hexDiv.style.backgroundColor = "rgba(0,255,0,0.5)";
+    } else if (cell.isEnd) {
+      hexDiv.style.backgroundColor = "rgba(255,0,0,0.5)";
+    } else if (cell.isCheckpoint) {
+      hexDiv.style.backgroundColor = "rgba(0,0,255,0.5)";
+    } else {
+      // Set color based on eValue
+      switch (cell.eValue) {
+        case 10:
+          hexDiv.style.backgroundColor = "rgba(200, 255, 200, 0.9)";
+          break;
+        case 20:
+          hexDiv.style.backgroundColor = "rgba(255, 255, 150, 0.9)";
+          break;
+        case 30:
+          hexDiv.style.backgroundColor = "rgba(255, 200, 200, 0.9)";
+          break;
+        case 40:
+          hexDiv.style.backgroundColor = "rgba(150, 200, 255, 0.9)";
+          break;
+        case 50:
+          hexDiv.style.backgroundColor = "rgba(255, 150, 255, 0.9)";
+          break;
+        default:
+          hexDiv.style.backgroundColor = "rgba(255,165,0,0.5)"; // default orange
+      }
+    }
+  });
+}
+
+/****************************************************************************
+ * 11. EXPORT ROUTE DATA FUNCTION (For Future Tasks)
+ ****************************************************************************/
+function exportRouteData() {
+  // Placeholder for export functionality
+  alert("Export functionality not yet implemented.");
 }
