@@ -1,0 +1,78 @@
+/* style.css */
+
+/* Basic resets */
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #eee;
+    font-family: sans-serif;
+  }
+  
+  /* A toolbar at the top with all buttons */
+  #toolbar {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background-color: #ccc;
+    border-bottom: 1px solid #999;
+    align-items: center;
+  }
+  
+  #toolbar button {
+    padding: 0.5rem 1rem;
+    border: 1px solid #999;
+    background-color: #f0f0f0;
+    cursor: pointer;
+  }
+  #toolbar button:hover {
+    background-color: #ddd;
+  }
+  
+  /* Where we display the total cost */
+  #route-cost-display {
+    margin-left: 1rem;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  /* The container for the background map & hex grid
+     - sized for demonstration; you can adjust as needed.
+     - you can keep the aspect ratio to match your image if you like. */
+     #map-container {
+        width: 80vw;
+        height: calc(80vw / 1.976); /* 1.976 = 4400 / 2227 */
+        margin: 1rem auto;
+        background: url("DeepLandMap.jpg") no-repeat center center;
+        background-size: contain;
+        border: 1px solid #999;
+        position: relative;
+        overflow: hidden;
+      }
+      
+  
+  /* Each hex cell. We position them absolutely in JS. */
+  .hex-cell {
+    position: absolute;
+    background-color: rgba(255, 165, 0, 0.5); /* default orange */
+    cursor: pointer;
+    
+    /* Default placeholder sizing; we'll set actual dimensions in JS. */
+    width: 50px;
+    height: 57.73px;
+  
+    /* Pointy-top hex shape via clip-path */
+    clip-path: polygon(
+      50% 0%,
+      100% 25%,
+      100% 75%,
+      50% 100%,
+      0% 75%,
+      0% 25%
+    );
+  }
+  
+  /* Hover feedback (optional) */
+  .hex-cell:hover {
+    opacity: 0.7;
+  }
+  
