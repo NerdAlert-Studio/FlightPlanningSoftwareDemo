@@ -8,7 +8,7 @@ let currentMode = null;
 // Toggling between Distance (dValue) and Energy (eValue) in pathfinding
 let useDistance = true; // default = distance mode
 
-// Set EValue?
+// Set EValue
 let currentEValue = 50;
 
 // Grid data structure.
@@ -251,9 +251,6 @@ function createHexGrid() {
     const containerWidth = mapContainer.clientWidth;
     const containerHeight = mapContainer.clientHeight;
 
-    // Use the global hexRows variable instead of declaring a new one
-    // const hexRows = 47; // Remove this line
-
     // Calculate the size of each hex based on container height and number of rows
     // For pointy-up hexagons:
     // Total vertical space = H + (R - 1) * (3/4 * H) => H * (1 + 0.75 * (R -1))
@@ -264,11 +261,11 @@ function createHexGrid() {
     const cellWidth = Math.sqrt(3) * size;
 
     // Spacing calculations
-    const horizontalSpacing = cellWidth; // Corrected from cellWidth to 1.5 * cellWidth
-    const verticalSpacing = cellHeight * 0.75; // 3/4 * H
+    const horizontalSpacing = cellWidth;
+    const verticalSpacing = cellHeight * 0.75;
 
     // Calculate the number of columns that fit within containerWidth
-    hexCols = Math.ceil(containerWidth / horizontalSpacing) + 1; // Assign to global hexCols
+    hexCols = Math.ceil(containerWidth / horizontalSpacing) + 1;
 
     console.log(`Hex Grid Dimensions: Rows = ${hexRows}, Columns = ${hexCols}`);
 
@@ -278,7 +275,7 @@ function createHexGrid() {
       for (let c = 0; c < hexCols; c++) {
         hexGrid[r][c] = {
           dValue: 150, // distance cost
-          eValue: 50,   // energy cost
+          eValue: 50,   // default energy cost
           isNoGo: false,
           isStart: false,
           isEnd: false,
@@ -287,7 +284,7 @@ function createHexGrid() {
       }
     }
 
-    // Create DOM elements for each hex cell
+    // Create Document Object Modelling (DOM) from HTML elements for each hex cell
     for (let row = 0; row < hexRows; row++) {
       for (let col = 0; col < hexCols; col++) {
         const hexDiv = document.createElement("div");
@@ -407,7 +404,7 @@ function colourHex(hexDiv) {
 }
 
 /****************************************************************************
- * (Optional) Helpers if you only want ONE start or ONE end
+ * Helpers for ONE start or ONE end
  ****************************************************************************/
 function resetStartFlag(currentRow, currentCol) {
   // Ensure only one "Start" hex at a time
@@ -572,7 +569,7 @@ function dijkstraDistance(startR, startC, endR, endC) {
     if (visited.has(id)) continue;
     visited.add(id);
 
-    // If we've reached the end, we can stop
+    // If reached the end, stop
     if (r === endR && c === endC) {
       break;
     }
@@ -582,7 +579,7 @@ function dijkstraDistance(startR, startC, endR, endC) {
     for (const n of nbrs) {
       if (hexGrid[n.r][n.c].isNoGo) continue; // skip blocked
 
-      // cost depends on whether we're using distance or energy
+      // cost depends on using distance or energy
       const cost = useDistance ? hexGrid[n.r][n.c].dValue : hexGrid[n.r][n.c].eValue;
       const altDist = currentDist + cost;
 
@@ -602,7 +599,6 @@ function dijkstraDistance(startR, startC, endR, endC) {
  ****************************************************************************/
 /**
  * Converts offset coordinates (row, col) to cube coordinates (x, y, z).
- * This is necessary for accurate distance calculations in hex grids.
  */
 function offsetToCube(r, c) {
   const x = c - Math.floor(r / 2);
@@ -635,7 +631,7 @@ function aStar(startR, startC, endR, endC) {
 
   dist[startR][startC] = 0;
 
-  // Priority Queue implemented as an array for simplicity
+  // Priority Queue
   // Each element is an object { r, c, f }
   const openSet = [{ r: startR, c: startC, f: hexDistance(startR, startC, endR, endC) }];
 
@@ -652,7 +648,7 @@ function aStar(startR, startC, endR, endC) {
     if (closedSet.has(currentId)) continue;
     closedSet.add(currentId);
 
-    // If we've reached the end, we can stop
+    // If reached the end, stop
     if (r === endR && c === endC) {
       break;
     }
@@ -682,7 +678,7 @@ function aStar(startR, startC, endR, endC) {
  * 8. RECONSTRUCT PATH FROM PREV[][]
  ****************************************************************************/
 function reconstructPath(dist, prev, endR, endC) {
-  // If we never found a path, dist is Infinity
+  // If no path, distance is Infinity
   if (dist[endR][endC] === Infinity) {
     return null;
   }
@@ -700,7 +696,7 @@ function reconstructPath(dist, prev, endR, endC) {
 
 /****************************************************************************
  * 9. MULTI-SEGMENT ROUTE (CHECKPOINTS)
- *    i.e. Start -> C1 -> C2 -> ... -> End
+ *    i.e. Start -> C1 -> C2 -> ... -> End in order placed
  ****************************************************************************/
 let currentRoutePath = []; // Global variable to store the current route path
 
@@ -811,7 +807,7 @@ function highlightPath(path) {
   // Store the current route path
   currentRoutePath = path;
 
-  // Use one colour for distance, another for energy
+  // Use one colour for distance (yellow), another for energy(magenta)
   const pathColour = useDistance
     ? "rgba(255, 255, 0, 0.6)"   // yellow
     : "rgba(255, 0, 255, 0.6)"; // magenta
@@ -865,7 +861,7 @@ function loadHexData() {
     return;
   }
 
-  // Assign it to your hexGrid
+  // Assign to hexGrid
   // (Assumes savedGrid has the same rows and cols)
   for (let r = 0; r < hexRows; r++) {
     if (!Array.isArray(savedGrid[r]) || savedGrid[r].length !== hexCols) {
@@ -1019,7 +1015,7 @@ function aStar(startR, startC, endR, endC) {
 
   dist[startR][startC] = 0;
 
-  // Priority Queue implemented as an array for simplicity
+  // Priority Queue implemented
   // Each element is an object { r, c, f }
   const openSet = [{ r: startR, c: startC, f: hexDistance(startR, startC, endR, endC) }];
 
