@@ -8,14 +8,14 @@ let currentMode = null;
 // Toggling between Distance (dValue) and Energy (eValue) in pathfinding
 let useDistance = true; // default = distance mode
 
-// If we're in "setEValue" mode, which value are we assigning?
+// Set EValue?
 let currentEValue = 50;
 
-// Our grid data structure.
+// Grid data structure.
 // hexGrid[row][col] => { dValue, eValue, isNoGo, isStart, isEnd, isCheckpoint, etc. }
 let hexGrid = [];
 
-// We'll keep references to all hex <div>s for quick clearing and toggling.
+// keep references to all hex <div>s for quick clearing.
 let allHexCells = [];
 
 // Dimensions for the grid
@@ -27,7 +27,7 @@ let gridVisible = true;
 
 /**
  * Global variable to track if the mouse button is currently held down (for drag).
- * We attach event listeners on the window so we always track mouse-up/down anywhere.
+ * Attach event listeners to always track mouse-up/down.
  */
 let mouseIsDown = false;
 window.addEventListener("mousedown", () => {
@@ -44,7 +44,7 @@ let currentAlgorithm = 'dijkstra'; // default to Dijkstra's
 
 /**
  * Toggle-Grid button listener.
- * Only shows/hides the hex cells, does NOT handle mouseIsDown logic anymore.
+ * shows/hides the hex cells.
  */
 document.addEventListener("DOMContentLoaded", () => {
   const toggleGridButton = document.getElementById("btn-toggle-grid");
@@ -110,7 +110,7 @@ function setupToolbar() {
 
   if (btnClear) {
     btnClear.addEventListener("click", () => {
-      clearGridColors();
+      clearGridColours();
       currentMode = null;
       removeActiveButtons();
     });
@@ -272,7 +272,7 @@ function createHexGrid() {
 
     console.log(`Hex Grid Dimensions: Rows = ${hexRows}, Columns = ${hexCols}`);
 
-    // Initialize the hexGrid data array
+    // Initialise the hexGrid data array
     for (let r = 0; r < hexRows; r++) {
       hexGrid[r] = [];
       for (let c = 0; c < hexCols; c++) {
@@ -311,17 +311,17 @@ function createHexGrid() {
 
         // Event listeners
         hexDiv.addEventListener("click", () => {
-          colorHex(hexDiv);
+          colourHex(hexDiv);
         });
 
         hexDiv.addEventListener("mousedown", (e) => {
           e.preventDefault(); // Prevent text selection
-          colorHex(hexDiv);
+          colourHex(hexDiv);
         });
 
         hexDiv.addEventListener("mouseover", () => {
           if (mouseIsDown) {
-            colorHex(hexDiv);
+            colourHex(hexDiv);
           }
         });
 
@@ -345,9 +345,9 @@ function createHexGrid() {
 }
 
 /****************************************************************************
- * 3. colorHex() - Applies the current mode to the hex
+ * 3. colourHex() - Applies the current mode to the hex
  ****************************************************************************/
-function colorHex(hexDiv) {
+function colourHex(hexDiv) {
   const row = parseInt(hexDiv.dataset.row, 10);
   const col = parseInt(hexDiv.dataset.col, 10);
 
@@ -376,7 +376,7 @@ function colorHex(hexDiv) {
       break;
 
     case "setEValue":
-      // Assign the chosen eValue to this cell, color accordingly
+      // Assign the chosen eValue to this cell, colour accordingly
       hexGrid[row][col].eValue = currentEValue;
       switch (currentEValue) {
         case 20:
@@ -401,7 +401,7 @@ function colorHex(hexDiv) {
       break;
 
     default:
-      // No mode or unrecognized
+      // No mode or unrecognised
       break;
   }
 }
@@ -418,7 +418,7 @@ function resetStartFlag(currentRow, currentCol) {
         // Update the UI
         const hexDiv = document.querySelector(`.hex-cell[data-row='${r}'][data-col='${c}']`);
         if (hexDiv) {
-          resetHexColor(hexDiv, r, c);
+          resetHexColour(hexDiv, r, c);
         }
       }
     }
@@ -434,7 +434,7 @@ function resetEndFlag(currentRow, currentCol) {
         // Update the UI
         const hexDiv = document.querySelector(`.hex-cell[data-row='${r}'][data-col='${c}']`);
         if (hexDiv) {
-          resetHexColor(hexDiv, r, c);
+          resetHexColour(hexDiv, r, c);
         }
       }
     }
@@ -442,9 +442,9 @@ function resetEndFlag(currentRow, currentCol) {
 }
 
 /**
- * Helper to reset hex color based on its current state
+ * Helper to reset hex colour based on its current state
  */
-function resetHexColor(hexDiv, r, c) {
+function resetHexColour(hexDiv, r, c) {
   const cell = hexGrid[r][c];
   if (cell.isNoGo) {
     hexDiv.style.backgroundColor = "rgba(0,0,0,0.5)";
@@ -455,7 +455,7 @@ function resetHexColor(hexDiv, r, c) {
   } else if (cell.isCheckpoint) {
     hexDiv.style.backgroundColor = "rgba(0,0,255,0.5)";
   } else {
-    // Set color based on eValue
+    // Set colour based on eValue
     switch (cell.eValue) {
       case 20:
         hexDiv.style.backgroundColor = "rgba(247, 162, 52, 0.48)";
@@ -474,15 +474,15 @@ function resetHexColor(hexDiv, r, c) {
         break;
       default:
         hexDiv.style.backgroundColor = "rgba(238, 210, 110, 0.48)";
-        break;// default orange
+        break;
     }
   }
 }
 
 /****************************************************************************
- * 4. clearGridColors() - Reset everything to default
+ * 4. clearGridColours() - Reset everything to default
  ****************************************************************************/
-function clearGridColors() {
+function clearGridColours() {
   // Revert all hex <div>s to default colour
   allHexCells.forEach((hexDiv) => {
     hexDiv.style.backgroundColor = "rgba(238, 210, 110, 0.48)";
@@ -510,10 +510,10 @@ function clearGridColors() {
 }
 
 /****************************************************************************
- * 5. NEIGHBOR CALCULATION (Pointy-Top Hexagons)
+ * 5. NEIGHBOUR CALCULATION (Pointy-Top Hexagons)
  ****************************************************************************/
-function getNeighbors(r, c) {
-  const neighbors = [];
+function getNeighbours(r, c) {
+  const neighbours = [];
   
   let directions;
   if (r % 2 === 0) {
@@ -542,18 +542,18 @@ function getNeighbors(r, c) {
     const nr = r + dir.dr;
     const nc = c + dir.dc;
     if (nr >= 0 && nr < hexRows && nc >= 0 && nc < hexCols) {
-      neighbors.push({ r: nr, c: nc });
+      neighbours.push({ r: nr, c: nc });
     }
   }
   
-  return neighbors;
+  return neighbours;
 }
 
 /****************************************************************************
  * 6. DIJKSTRA PATHFINDING (DISTANCE OR ENERGY)
  ****************************************************************************/
 function dijkstraDistance(startR, startC, endR, endC) {
-  // Initialize distance and previous arrays
+  // Initialise distance and previous arrays
   const dist = Array.from({ length: hexRows }, () => Array(hexCols).fill(Infinity));
   const prev = Array.from({ length: hexRows }, () => Array(hexCols).fill(null));
 
@@ -577,8 +577,8 @@ function dijkstraDistance(startR, startC, endR, endC) {
       break;
     }
 
-    // Explore neighbors
-    const nbrs = getNeighbors(r, c);
+    // Explore neighbours
+    const nbrs = getNeighbours(r, c);
     for (const n of nbrs) {
       if (hexGrid[n.r][n.c].isNoGo) continue; // skip blocked
 
@@ -629,7 +629,7 @@ function hexDistance(r1, c1, r2, c2) {
  * @returns {Object} - Contains 'dist' and 'prev' arrays.
  */
 function aStar(startR, startC, endR, endC) {
-  // Initialize distance and previous arrays
+  // Initialise distance and previous arrays
   const dist = Array.from({ length: hexRows }, () => Array(hexCols).fill(Infinity));
   const prev = Array.from({ length: hexRows }, () => Array(hexCols).fill(null));
 
@@ -657,10 +657,10 @@ function aStar(startR, startC, endR, endC) {
       break;
     }
 
-    // Explore neighbors
-    const neighbors = getNeighbors(r, c);
-    for (const neighbor of neighbors) {
-      const { r: nr, c: nc } = neighbor;
+    // Explore neighbours
+    const neighbours = getNeighbours(r, c);
+    for (const neighbour of neighbours) {
+      const { r: nr, c: nc } = neighbour;
 
       if (hexGrid[nr][nc].isNoGo) continue; // Skip blocked cells
 
@@ -805,14 +805,14 @@ function highlightPath(path) {
     const r = parseInt(hexDiv.dataset.row, 10);
     const c = parseInt(hexDiv.dataset.col, 10);
     const cell = hexGrid[r][c];
-    resetHexColor(hexDiv, r, c);
+    resetHexColour(hexDiv, r, c);
   });
 
   // Store the current route path
   currentRoutePath = path;
 
-  // Use one color for distance, another for energy
-  const pathColor = useDistance
+  // Use one colour for distance, another for energy
+  const pathColour = useDistance
     ? "rgba(255, 255, 0, 0.6)"   // yellow
     : "rgba(255, 0, 255, 0.6)"; // magenta
 
@@ -821,7 +821,7 @@ function highlightPath(path) {
     const c = cell.c;
     const hexDiv = document.querySelector(`.hex-cell[data-row='${r}'][data-col='${c}']`);
     if (hexDiv) {
-      hexDiv.style.backgroundColor = pathColor;
+      hexDiv.style.backgroundColor = pathColour;
     }
   }
 }
@@ -892,7 +892,7 @@ function reDrawFromHexGrid() {
     const c = parseInt(hexDiv.dataset.col, 10);
     const cell = hexGrid[r][c];
 
-    // Decide color based on cell's data
+    // Decide colour based on cell's data
     if (cell.isNoGo) {
       hexDiv.style.backgroundColor = "rgba(0,0,0,0.5)";
     } else if (cell.isStart) {
@@ -902,7 +902,7 @@ function reDrawFromHexGrid() {
     } else if (cell.isCheckpoint) {
       hexDiv.style.backgroundColor = "rgba(0,0,255,0.5)";
     } else {
-      // Set color based on eValue
+      // Set colour based on eValue
       switch (cell.eValue) {
         case 20:
           hexDiv.style.backgroundColor = "rgba(247, 162, 52, 0.48)";
@@ -921,7 +921,7 @@ function reDrawFromHexGrid() {
           break;
         default:
           hexDiv.style.backgroundColor = "rgba(238, 210, 110, 0.48)";
-          break; // default orange
+          break;
       }
     }
   });
@@ -1013,7 +1013,7 @@ function triggerDownload(url, filename) {
  * 13. A* PATHFINDING (DISTANCE OR ENERGY)
  ****************************************************************************/
 function aStar(startR, startC, endR, endC) {
-  // Initialize distance and previous arrays
+  // Initialise distance and previous arrays
   const dist = Array.from({ length: hexRows }, () => Array(hexCols).fill(Infinity));
   const prev = Array.from({ length: hexRows }, () => Array(hexCols).fill(null));
 
@@ -1041,10 +1041,10 @@ function aStar(startR, startC, endR, endC) {
       break;
     }
 
-    // Explore neighbors
-    const neighbors = getNeighbors(r, c);
-    for (const neighbor of neighbors) {
-      const { r: nr, c: nc } = neighbor;
+    // Explore neighbours
+    const neighbours = getNeighbours(r, c);
+    for (const neighbour of neighbours) {
+      const { r: nr, c: nc } = neighbour;
 
       if (hexGrid[nr][nc].isNoGo) continue; // Skip blocked cells
 
