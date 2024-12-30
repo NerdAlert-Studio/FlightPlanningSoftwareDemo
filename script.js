@@ -143,7 +143,7 @@ function setupToolbar() {
     btnE60.addEventListener("click", () => {
       currentMode = "setEValue";
       currentEValue = 60;
-      setActiveButton(btn60);
+      setActiveButton(btnE60);
     });
   }
 
@@ -395,7 +395,7 @@ function colorHex(hexDiv) {
           hexDiv.style.backgroundColor = "rgba(63, 232, 63, 0.48)";
           break;
         default:
-          hexDiv.style.backgroundColor = "rgba(110,187,238,0.48)";
+          hexDiv.style.backgroundColor = "rgba(238, 210, 110, 0.48)";
           break;
       }
       break;
@@ -473,7 +473,7 @@ function resetHexColor(hexDiv, r, c) {
         hexDiv.style.backgroundColor = "rgba(63, 232, 63, 0.48)";
         break;
       default:
-        hexDiv.style.backgroundColor = "rgba(110, 187, 238, 0.41)";
+        hexDiv.style.backgroundColor = "rgba(238, 210, 110, 0.48)";
         break;// default orange
     }
   }
@@ -485,7 +485,7 @@ function resetHexColor(hexDiv, r, c) {
 function clearGridColors() {
   // Revert all hex <div>s to default colour
   allHexCells.forEach((hexDiv) => {
-    hexDiv.style.backgroundColor = "rgba(110,187,238,0.41)";
+    hexDiv.style.backgroundColor = "rgba(238, 210, 110, 0.48)";
   });
 
   // Reset all data flags 
@@ -495,7 +495,7 @@ function clearGridColors() {
       hexGrid[r][c].isStart = false;
       hexGrid[r][c].isEnd = false;
       hexGrid[r][c].isCheckpoint = false;
-      hexGrid[r][c].eValue = 10; // default eValue reset
+      hexGrid[r][c].eValue = 50; // default eValue reset
     }
   }
 
@@ -907,7 +907,7 @@ function reDrawFromHexGrid() {
           hexDiv.style.backgroundColor = "rgba(63, 232, 63, 0.48)";
           break;
         default:
-          hexDiv.style.backgroundColor = "rgba(110, 187, 238, 0.41)";
+          hexDiv.style.backgroundColor = "rgba(238, 210, 110, 0.48)";
           break; // default orange
       }
     }
