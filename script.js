@@ -514,17 +514,30 @@ function clearGridColors() {
  ****************************************************************************/
 function getNeighbors(r, c) {
   const neighbors = [];
-
-  // Directions for pointy-up hexagons
-  const directions = [
-    { dr: -1, dc: 0 },  // top-right
-    { dr: -1, dc: 1 },  // top-left
-    { dr: 0, dc: 1 },   // left
-    { dr: 1, dc: 0 },   // bottom-left
-    { dr: 1, dc: -1 },  // bottom-right
-    { dr: 0, dc: -1 }   // right
-  ];
-
+  
+  let directions;
+  if (r % 2 === 0) {
+    // Even row offsets
+    directions = [
+      { dr: -1, dc: 0 },
+      { dr: -1, dc: -1 },
+      { dr: 0, dc: -1 },
+      { dr: 1, dc: -1 },
+      { dr: 1, dc: 0 },
+      { dr: 0, dc: 1 }
+    ];
+  } else {
+    // Odd row offsets
+    directions = [
+      { dr: -1, dc: 1 },
+      { dr: -1, dc: 0 },
+      { dr: 0, dc: -1 },
+      { dr: 1, dc: 0 },
+      { dr: 1, dc: 1 },
+      { dr: 0, dc: 1 }
+    ];
+  }
+  
   for (const dir of directions) {
     const nr = r + dir.dr;
     const nc = c + dir.dc;
@@ -532,7 +545,7 @@ function getNeighbors(r, c) {
       neighbors.push({ r: nr, c: nc });
     }
   }
-
+  
   return neighbors;
 }
 
