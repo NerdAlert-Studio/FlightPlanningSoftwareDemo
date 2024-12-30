@@ -9,7 +9,7 @@ let currentMode = null;
 let useDistance = true; // default = distance mode
 
 // If we're in "setEValue" mode, which value are we assigning? (10,20,30,40,50)
-let currentEValue = 10;
+let currentEValue = 50;
 
 // Our grid data structure.
 // hexGrid[row][col] => { dValue, eValue, isNoGo, isStart, isEnd, isCheckpoint, etc. }
@@ -117,19 +117,11 @@ function setupToolbar() {
   }
 
   // E-value assignment buttons
-  const btnE10 = document.getElementById("btn-e10");
   const btnE20 = document.getElementById("btn-e20");
   const btnE30 = document.getElementById("btn-e30");
-  const btnE40 = document.getElementById("btn-e40");
   const btnE50 = document.getElementById("btn-e50");
-
-  if (btnE10) {
-    btnE10.addEventListener("click", () => {
-      currentMode = "setEValue";
-      currentEValue = 10;
-      setActiveButton(btnE10);
-    });
-  }
+  const btnE60 = document.getElementById("btn-e60");
+  const btnE100 = document.getElementById("btn-e100");
 
   if (btnE20) {
     btnE20.addEventListener("click", () => {
@@ -147,11 +139,19 @@ function setupToolbar() {
     });
   }
 
-  if (btnE40) {
-    btnE40.addEventListener("click", () => {
+  if (btnE60) {
+    btnE60.addEventListener("click", () => {
       currentMode = "setEValue";
-      currentEValue = 40;
-      setActiveButton(btnE40);
+      currentEValue = 60;
+      setActiveButton(btn60);
+    });
+  }
+
+  if (btnE100) {
+    btnE100.addEventListener("click", () => {
+      currentMode = "setEValue";
+      currentEValue = 100;
+      setActiveButton(btnE100);
     });
   }
 
@@ -379,23 +379,23 @@ function colorHex(hexDiv) {
       // Assign the chosen eValue to this cell, color accordingly
       hexGrid[row][col].eValue = currentEValue;
       switch (currentEValue) {
-        case 10:
-          hexDiv.style.backgroundColor = "rgba(200, 255, 200, 0.9)";
-          break;
         case 20:
-          hexDiv.style.backgroundColor = "rgba(255, 255, 150, 0.9)";
+          hexDiv.style.backgroundColor = "rgba(247, 162, 52, 0.48)";
           break;
         case 30:
-          hexDiv.style.backgroundColor = "rgba(255, 200, 200, 0.9)";
-          break;
-        case 40:
-          hexDiv.style.backgroundColor = "rgba(150, 200, 255, 0.9)";
+          hexDiv.style.backgroundColor = "rgba(230, 239, 132, 0.48)";
           break;
         case 50:
-          hexDiv.style.backgroundColor = "rgba(255, 150, 255, 0.9)";
+          hexDiv.style.backgroundColor = "rgba(110, 187, 238, 0.48)";
+          break;
+        case 60:
+          hexDiv.style.backgroundColor = "rgba(207, 250, 128, 0.48)";
+          break;
+        case 100:
+          hexDiv.style.backgroundColor = "rgba(63, 232, 63, 0.48)";
           break;
         default:
-          hexDiv.style.backgroundColor = "rgba(255,165,0,0.9)";
+          hexDiv.style.backgroundColor = "rgba(110,187,238,0.48)";
           break;
       }
       break;
@@ -457,23 +457,23 @@ function resetHexColor(hexDiv, r, c) {
   } else {
     // Set color based on eValue
     switch (cell.eValue) {
-      case 10:
-        hexDiv.style.backgroundColor = "rgba(200, 255, 200, 0.9)";
-        break;
       case 20:
-        hexDiv.style.backgroundColor = "rgba(255, 255, 150, 0.9)";
+        hexDiv.style.backgroundColor = "rgba(247, 162, 52, 0.48)";
         break;
       case 30:
-        hexDiv.style.backgroundColor = "rgba(255, 200, 200, 0.9)";
-        break;
-      case 40:
-        hexDiv.style.backgroundColor = "rgba(150, 200, 255, 0.9)";
+        hexDiv.style.backgroundColor = "rgba(230, 239, 132, 0.48)";
         break;
       case 50:
-        hexDiv.style.backgroundColor = "rgba(255, 150, 255, 0.9)";
+        hexDiv.style.backgroundColor = "rgba(110, 187, 238, 0.48)";
+        break;
+      case 60:
+        hexDiv.style.backgroundColor = "rgba(207, 250, 128, 0.48)";
+        break;
+      case 100:
+        hexDiv.style.backgroundColor = "rgba(63, 232, 63, 0.48)";
         break;
       default:
-        hexDiv.style.backgroundColor = "rgba(255,165,0,0.5)"; // default orange
+        hexDiv.style.backgroundColor = "rgba(110, 187, 238, 0.41)";// default orange
     }
   }
 }
@@ -482,9 +482,9 @@ function resetHexColor(hexDiv, r, c) {
  * 4. clearGridColors() - Reset everything to default
  ****************************************************************************/
 function clearGridColors() {
-  // Revert all hex <div>s to default orange
+  // Revert all hex <div>s to default colour
   allHexCells.forEach((hexDiv) => {
-    hexDiv.style.backgroundColor = "rgba(255,165,0,0.5)";
+    hexDiv.style.backgroundColor = "rgba(110,187,238,0.41)";
   });
 
   // Reset all data flags 
