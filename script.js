@@ -8,7 +8,7 @@ let currentMode = null;
 // Toggling between Distance (dValue) and Energy (eValue) in pathfinding
 let useDistance = true; // default = distance mode
 
-// If we're in "setEValue" mode, which value are we assigning? (10,20,30,40,50)
+// If we're in "setEValue" mode, which value are we assigning?
 let currentEValue = 50;
 
 // Our grid data structure.
@@ -278,7 +278,7 @@ function createHexGrid() {
       for (let c = 0; c < hexCols; c++) {
         hexGrid[r][c] = {
           dValue: 150, // distance cost
-          eValue: 10,   // energy cost
+          eValue: 50,   // energy cost
           isNoGo: false,
           isStart: false,
           isEnd: false,
