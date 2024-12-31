@@ -11,6 +11,9 @@ let useDistance = true; // default = distance mode
 // Set EValue
 let currentEValue = 50;
 
+// 2D array to map [row][col] to hexDiv
+let hexDivMap = []; 
+
 // Grid data structure.
 // hexGrid[row][col] => { dValue, eValue, isNoGo, isStart, isEnd, isCheckpoint, etc. }
 let hexGrid = [];
@@ -252,8 +255,6 @@ function createHexGrid() {
     const containerHeight = mapContainer.clientHeight;
 
     // Calculate the size of each hex based on container height and number of rows
-    // For pointy-up hexagons:
-    // Total vertical space = H + (R - 1) * (3/4 * H) => H * (1 + 0.75 * (R -1))
     const cellHeight = containerHeight / (1 + 0.75 * (hexRows - 1));
     const size = cellHeight / 2; // size is half of cellHeight
 
@@ -269,9 +270,10 @@ function createHexGrid() {
 
     console.log(`Hex Grid Dimensions: Rows = ${hexRows}, Columns = ${hexCols}`);
 
-    // Initialise the hexGrid data array
+    // Initialise the hexGrid and hexDivMap data arrays
     for (let r = 0; r < hexRows; r++) {
       hexGrid[r] = [];
+      hexDivMap[r] = []; // Initialize the row in hexDivMap
       for (let c = 0; c < hexCols; c++) {
         hexGrid[r][c] = {
           dValue: 150, // distance cost
@@ -281,10 +283,13 @@ function createHexGrid() {
           isEnd: false,
           isCheckpoint: false
         };
+        hexDivMap[r][c] = null; // Placeholder, will be assigned during DOM creation
       }
     }
 
-    // Create Document Object Modelling (DOM) from HTML elements for each hex cell
+    // Create a DocumentFragment to batch append hexDivs
+    const fragment = document.createDocumentFragment();
+
     for (let row = 0; row < hexRows; row++) {
       for (let col = 0; col < hexCols; col++) {
         const hexDiv = document.createElement("div");
@@ -305,34 +310,58 @@ function createHexGrid() {
         hexDiv.style.height = `${cellHeight}px`;
         hexDiv.style.left = `${xPos}px`;
         hexDiv.style.top = `${yPos}px`;
-
-        // Event listeners
-        hexDiv.addEventListener("click", () => {
-          colourHex(hexDiv);
-        });
-
-        hexDiv.addEventListener("mousedown", (e) => {
-          e.preventDefault(); // Prevent text selection
-          colourHex(hexDiv);
-        });
-
-        hexDiv.addEventListener("mouseover", () => {
-          if (mouseIsDown) {
-            colourHex(hexDiv);
-          }
-        });
-
-        hexDiv.addEventListener("contextmenu", (e) => {
-          e.preventDefault(); // Prevent default context menu
-          const r = parseInt(hexDiv.dataset.row, 10);
-          const c = parseInt(hexDiv.dataset.col, 10);
-          alert(`E-Value for this hex: ${hexGrid[r][c].eValue}`);
-        });
-
-        mapContainer.appendChild(hexDiv);
+        fragment.appendChild(hexDiv);
         allHexCells.push(hexDiv);
+        hexDivMap[row][col] = hexDiv; // Cache the reference
       }
     }
+
+    mapContainer.appendChild(fragment); // Append all hexDivs at once
+    mapContainer.removeEventListener("click", handleClick);
+    mapContainer.removeEventListener("mousedown", handleMouseDown);
+    mapContainer.removeEventListener("mouseover", handleMouseOver);
+    mapContainer.removeEventListener("contextmenu", handleContextMenu);
+
+    // Define handler functions
+    function handleClick(event) {
+      const hexDiv = event.target.closest(".hex-cell");
+      if (hexDiv) {
+        colourHex(hexDiv);
+      }
+    }
+
+    function handleMouseDown(event) {
+      const hexDiv = event.target.closest(".hex-cell");
+      if (hexDiv) {
+        event.preventDefault(); // Prevent text selection
+        colourHex(hexDiv);
+      }
+    }
+
+    function handleMouseOver(event) {
+      if (mouseIsDown) {
+        const hexDiv = event.target.closest(".hex-cell");
+        if (hexDiv) {
+          colourHex(hexDiv);
+        }
+      }
+    }
+
+    function handleContextMenu(event) {
+      const hexDiv = event.target.closest(".hex-cell");
+      if (hexDiv) {
+        event.preventDefault(); // Prevent default context menu
+        const r = parseInt(hexDiv.dataset.row, 10);
+        const c = parseInt(hexDiv.dataset.col, 10);
+        alert(`E-Value for this hex: ${hexGrid[r][c].eValue}`);
+      }
+    }
+
+    // Attach event listeners
+    mapContainer.addEventListener("click", handleClick);
+    mapContainer.addEventListener("mousedown", handleMouseDown);
+    mapContainer.addEventListener("mouseover", handleMouseOver);
+    mapContainer.addEventListener("contextmenu", handleContextMenu);
   };
 
   // Trigger the onload function if the image is already cached
@@ -340,6 +369,7 @@ function createHexGrid() {
     mapImage.onload();
   }
 }
+
 
 /****************************************************************************
  * 3. colourHex() - Applies the current mode to the hex
@@ -412,8 +442,8 @@ function resetStartFlag(currentRow, currentCol) {
     for (let c = 0; c < hexCols; c++) {
       if (hexGrid[r][c].isStart && !(r === currentRow && c === currentCol)) {
         hexGrid[r][c].isStart = false;
-        // Update the UI
-        const hexDiv = document.querySelector(`.hex-cell[data-row='${r}'][data-col='${c}']`);
+        // Update the UI using hexDivMap
+        const hexDiv = hexDivMap[r][c];
         if (hexDiv) {
           resetHexColour(hexDiv, r, c);
         }
@@ -428,8 +458,8 @@ function resetEndFlag(currentRow, currentCol) {
     for (let c = 0; c < hexCols; c++) {
       if (hexGrid[r][c].isEnd && !(r === currentRow && c === currentCol)) {
         hexGrid[r][c].isEnd = false;
-        // Update the UI
-        const hexDiv = document.querySelector(`.hex-cell[data-row='${r}'][data-col='${c}']`);
+        // Update the UI using hexDivMap
+        const hexDiv = hexDivMap[r][c];
         if (hexDiv) {
           resetHexColour(hexDiv, r, c);
         }
@@ -442,6 +472,9 @@ function resetEndFlag(currentRow, currentCol) {
  * Helper to reset hex colour based on its current state
  */
 function resetHexColour(hexDiv, r, c) {
+  // Remove any path-related classes
+  hexDiv.classList.remove("path-distance", "path-energy");
+
   const cell = hexGrid[r][c];
   if (cell.isNoGo) {
     hexDiv.style.backgroundColor = "rgba(0,0,0,0.5)";
@@ -476,16 +509,12 @@ function resetHexColour(hexDiv, r, c) {
   }
 }
 
+
 /****************************************************************************
  * 4. clearGridColours() - Reset everything to default
  ****************************************************************************/
 function clearGridColours() {
-  // Revert all hex <div>s to default colour
-  allHexCells.forEach((hexDiv) => {
-    hexDiv.style.backgroundColor = "rgba(238, 210, 110, 0.48)";
-  });
-
-  // Reset all data flags 
+  // Reset all data flags and reset colors using resetHexColour
   for (let r = 0; r < hexRows; r++) {
     for (let c = 0; c < hexCols; c++) {
       hexGrid[r][c].isNoGo = false;
@@ -493,6 +522,11 @@ function clearGridColours() {
       hexGrid[r][c].isEnd = false;
       hexGrid[r][c].isCheckpoint = false;
       hexGrid[r][c].eValue = 50; // default eValue reset
+
+      const hexDiv = hexDivMap[r][c];
+      if (hexDiv) {
+        resetHexColour(hexDiv, r, c);
+      }
     }
   }
 
@@ -595,10 +629,14 @@ function dijkstraDistance(startR, startC, endR, endC) {
 }
 
 /****************************************************************************
- * 7. A* PATHFINDING (DISTANCE OR ENERGY)
+ * 6.1. OFFSET TO CUBE COORDINATES
  ****************************************************************************/
 /**
  * Converts offset coordinates (row, col) to cube coordinates (x, y, z).
+ * Assumes pointy-top hexagons.
+ * @param {number} r - Row index.
+ * @param {number} c - Column index.
+ * @returns {Object} - Cube coordinates { x, y, z }.
  */
 function offsetToCube(r, c) {
   const x = c - Math.floor(r / 2);
@@ -607,15 +645,117 @@ function offsetToCube(r, c) {
   return { x, y, z };
 }
 
+/****************************************************************************
+ * 6.2. HEX DISTANCE CALCULATION
+ ****************************************************************************/
 /**
  * Calculates the hex distance between two cells using cube coordinates.
+ * @param {number} r1 - Row index of the first cell.
+ * @param {number} c1 - Column index of the first cell.
+ * @param {number} r2 - Row index of the second cell.
+ * @param {number} c2 - Column index of the second cell.
+ * @returns {number} - Hex distance between the two cells.
  */
 function hexDistance(r1, c1, r2, c2) {
   const a = offsetToCube(r1, c1);
   const b = offsetToCube(r2, c2);
-  return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y), Math.abs(a.z - b.z));
+  return Math.max(
+    Math.abs(a.x - b.x),
+    Math.abs(a.y - b.y),
+    Math.abs(a.z - b.z)
+  );
 }
 
+/****************************************************************************
+ * 7. HEURISTIC FUNCTIONS FOR A* PATHFINDING
+ ****************************************************************************/
+
+/**
+ * Calculates an energy-based heuristic.
+ * Ensures the heuristic is admissible by using the minimum energy per step.
+ * @param {number} r1 - Current row.
+ * @param {number} c1 - Current column.
+ * @param {number} r2 - Target row.
+ * @param {number} c2 - Target column.
+ * @returns {number} - Estimated minimum energy to reach the target.
+ */
+function energyHeuristic(r1, c1, r2, c2) {
+  const distance = hexDistance(r1, c1, r2, c2);
+  const minEnergyPerStep = 20; // Adjust based on your minimum eValue
+  return distance * minEnergyPerStep;
+}
+
+/**
+ * Selects the appropriate heuristic based on the current mode.
+ * @param {number} r - Current row.
+ * @param {number} c - Current column.
+ * @param {number} endR - Target row.
+ * @param {number} endC - Target column.
+ * @returns {number} - Heuristic value.
+ */
+function getHeuristic(r, c, endR, endC) {
+  if (useDistance) {
+    return hexDistance(r, c, endR, endC);
+  } else {
+    return energyHeuristic(r, c, endR, endC);
+  }
+}
+
+/****************************************************************************
+ * 7.1. MINIMUM HEAP IMPLEMENTATION FOR PRIORITY QUEUE
+ ****************************************************************************/
+class MinHeap {
+  constructor() {
+    this.heap = [];
+  }
+
+  push(element) {
+    this.heap.push(element);
+    this.bubbleUp(this.heap.length - 1);
+  }
+
+  pop() {
+    if (this.heap.length === 0) return null;
+    if (this.heap.length === 1) return this.heap.pop();
+    const top = this.heap[0];
+    this.heap[0] = this.heap.pop();
+    this.bubbleDown(0);
+    return top;
+  }
+
+  bubbleUp(index) {
+    while (index > 0) {
+      const parentIndex = Math.floor((index - 1) / 2);
+      if (this.heap[parentIndex].f <= this.heap[index].f) break;
+      [this.heap[parentIndex], this.heap[index]] = [this.heap[index], this.heap[parentIndex]];
+      index = parentIndex;
+    }
+  }
+
+  bubbleDown(index) {
+    const length = this.heap.length;
+    while (true) {
+      let left = 2 * index + 1;
+      let right = 2 * index + 2;
+      let smallest = index;
+
+      if (left < length && this.heap[left].f < this.heap[smallest].f) smallest = left;
+      if (right < length && this.heap[right].f < this.heap[smallest].f) smallest = right;
+
+      if (smallest === index) break;
+      [this.heap[smallest], this.heap[index]] = [this.heap[index], this.heap[smallest]];
+      index = smallest;
+    }
+  }
+
+  isEmpty() {
+    return this.heap.length === 0;
+  }
+}
+
+/****************************************************************************
+ * 8. A* PATHFINDING (DISTANCE OR ENERGY)
+ ****************************************************************************/
 /**
  * Implements the A* pathfinding algorithm.
  * @param {number} startR - Starting row.
@@ -631,17 +771,15 @@ function aStar(startR, startC, endR, endC) {
 
   dist[startR][startC] = 0;
 
-  // Priority Queue
-  // Each element is an object { r, c, f }
-  const openSet = [{ r: startR, c: startC, f: hexDistance(startR, startC, endR, endC) }];
+  // Priority Queue implemented with a binary heap for efficiency
+  const openSet = new MinHeap();
+  openSet.push({ r: startR, c: startC, f: getHeuristic(startR, startC, endR, endC) });
 
   // To keep track of visited nodes
   const closedSet = new Set();
 
-  while (openSet.length > 0) {
-    // Sort the open set by f value (f = g + h) and select the node with the lowest f
-    openSet.sort((a, b) => a.f - b.f);
-    const current = openSet.shift();
+  while (!openSet.isEmpty()) {
+    const current = openSet.pop();
     const { r, c } = current;
     const currentId = `${r},${c}`;
 
@@ -660,12 +798,14 @@ function aStar(startR, startC, endR, endC) {
 
       if (hexGrid[nr][nc].isNoGo) continue; // Skip blocked cells
 
-      const tentativeG = dist[r][c] + (useDistance ? hexGrid[nr][nc].dValue : hexGrid[nr][nc].eValue);
+      const cost = useDistance ? hexGrid[nr][nc].dValue : hexGrid[nr][nc].eValue;
+      const tentativeG = dist[r][c] + cost;
 
       if (tentativeG < dist[nr][nc]) {
         dist[nr][nc] = tentativeG;
         prev[nr][nc] = { r, c };
-        const f = tentativeG + hexDistance(nr, nc, endR, endC);
+        const heuristic = getHeuristic(nr, nc, endR, endC);
+        const f = tentativeG + heuristic;
         openSet.push({ r: nr, c: nc, f });
       }
     }
@@ -674,8 +814,9 @@ function aStar(startR, startC, endR, endC) {
   return { dist, prev };
 }
 
+
 /****************************************************************************
- * 8. RECONSTRUCT PATH FROM PREV[][]
+ * 9. RECONSTRUCT PATH FROM PREV[][]
  ****************************************************************************/
 function reconstructPath(dist, prev, endR, endC) {
   // If no path, distance is Infinity
@@ -695,7 +836,7 @@ function reconstructPath(dist, prev, endR, endC) {
 }
 
 /****************************************************************************
- * 9. MULTI-SEGMENT ROUTE (CHECKPOINTS)
+ * 10. MULTI-SEGMENT ROUTE (CHECKPOINTS)
  *    i.e. Start -> C1 -> C2 -> ... -> End in order placed
  ****************************************************************************/
 let currentRoutePath = []; // Global variable to store the current route path
@@ -717,21 +858,17 @@ function findRouteWithCheckpoints() {
       if (cell.isStart) {
         startR = r;
         startC = c;
-        console.log(`Found Start at Row: ${r}, Col: ${c}`);
       }
       if (cell.isEnd) {
         endR = r;
         endC = c;
-        console.log(`Found End at Row: ${r}, Col: ${c}`);
       }
       if (cell.isCheckpoint) {
         checkpoints.push({ r, c });
-        console.log(`Found Checkpoint at Row: ${r}, Col: ${c}`);
       }
     }
   }
 
-  // Basic validation
   if (startR === null || startC === null) {
     alert("No Start cell found!");
     return;
@@ -741,15 +878,20 @@ function findRouteWithCheckpoints() {
     return;
   }
 
-  // Build a waypoint list: Start -> checkpoints... -> End
+  // Waypoints: Start -> checkpoint(s) -> End
   const waypoints = [{ r: startR, c: startC }, ...checkpoints, { r: endR, c: endC }];
   let totalPath = [];
   let totalCost = 0;
 
-  // For each consecutive pair in the waypoints array
+  // Track total runtime
+  let totalRuntimeMs = 0;
+
   for (let i = 0; i < waypoints.length - 1; i++) {
     const s = waypoints[i];
     const t = waypoints[i + 1];
+
+    // Start the timer
+    const startTime = performance.now();
 
     let result;
     if (currentAlgorithm === 'dijkstra') {
@@ -757,6 +899,12 @@ function findRouteWithCheckpoints() {
     } else if (currentAlgorithm === 'astar') {
       result = aStar(s.r, s.c, t.r, t.c);
     }
+
+    // End the timer
+    const endTime = performance.now();
+    // Calculate the runtime for this segment
+    const segmentRuntime = endTime - startTime;
+    totalRuntimeMs += segmentRuntime;
 
     const { dist, prev } = result;
     const segmentPath = reconstructPath(dist, prev, t.r, t.c);
@@ -766,16 +914,13 @@ function findRouteWithCheckpoints() {
       return;
     }
 
-    // Accumulate cost
     totalCost += dist[t.r][t.c];
 
-    // Merge segments (avoid duplication of the connecting waypoint)
+    // Merge path segments
     if (i === 0) {
-      // first segment in full
       totalPath = segmentPath;
     } else {
-      // remove the last node from previous path to avoid duplication
-      totalPath.pop();
+      totalPath.pop(); 
       totalPath = [...totalPath, ...segmentPath];
     }
   }
@@ -783,15 +928,18 @@ function findRouteWithCheckpoints() {
   // Highlight final path
   highlightPath(totalPath);
 
-  // Display final total cost
+  // Display final total cost + runtime
   if (routeCostDisplay) {
     const costType = useDistance ? "Distance" : "Energy";
-    routeCostDisplay.textContent = `Total ${costType} Cost: ${totalCost}`;
+    routeCostDisplay.textContent = 
+      `Total ${costType} Cost: ${totalCost}\n` +
+      `Total Runtime: ${totalRuntimeMs.toFixed(2)} ms`;
   }
 }
 
+
 /****************************************************************************
- * 10. HIGHLIGHT THE FINAL PATH
+ * 11. HIGHLIGHT THE FINAL PATH
  ****************************************************************************/
 function highlightPath(path) {
   if (!path || path.length === 0) return;
@@ -800,30 +948,27 @@ function highlightPath(path) {
   allHexCells.forEach(hexDiv => {
     const r = parseInt(hexDiv.dataset.row, 10);
     const c = parseInt(hexDiv.dataset.col, 10);
-    const cell = hexGrid[r][c];
     resetHexColour(hexDiv, r, c);
   });
 
   // Store the current route path
   currentRoutePath = path;
 
-  // Use one colour for distance (yellow), another for energy(magenta)
-  const pathColour = useDistance
-    ? "rgba(255, 255, 0, 0.6)"   // yellow
-    : "rgba(255, 0, 255, 0.6)"; // magenta
+  // Determine the class based on mode
+  const pathClass = useDistance ? "path-distance" : "path-energy";
 
   for (const cell of path) {
     const r = cell.r;
     const c = cell.c;
-    const hexDiv = document.querySelector(`.hex-cell[data-row='${r}'][data-col='${c}']`);
+    const hexDiv = hexDivMap[r][c];
     if (hexDiv) {
-      hexDiv.style.backgroundColor = pathColour;
+      hexDiv.classList.add(pathClass);
     }
   }
 }
 
 /****************************************************************************
- * 11. SAVE AND LOAD DATA FUNCTIONS
+ * 12. SAVE AND LOAD DATA FUNCTIONS
  ****************************************************************************/
 
 /**
@@ -924,7 +1069,7 @@ function reDrawFromHexGrid() {
 }
 
 /****************************************************************************
- * 12. EXPORT ROUTE DATA FUNCTION
+ * 13. EXPORT ROUTE DATA FUNCTION
  ****************************************************************************/
 function exportRouteData() {
   if (!currentRoutePath || currentRoutePath.length === 0) {
@@ -1003,57 +1148,4 @@ function triggerDownload(url, filename) {
   a.click();
   document.body.removeChild(a);
   alert(`Route exported as ${filename}!`);
-}
-
-/****************************************************************************
- * 13. A* PATHFINDING (DISTANCE OR ENERGY)
- ****************************************************************************/
-function aStar(startR, startC, endR, endC) {
-  // Initialise distance and previous arrays
-  const dist = Array.from({ length: hexRows }, () => Array(hexCols).fill(Infinity));
-  const prev = Array.from({ length: hexRows }, () => Array(hexCols).fill(null));
-
-  dist[startR][startC] = 0;
-
-  // Priority Queue implemented
-  // Each element is an object { r, c, f }
-  const openSet = [{ r: startR, c: startC, f: hexDistance(startR, startC, endR, endC) }];
-
-  // To keep track of visited nodes
-  const closedSet = new Set();
-
-  while (openSet.length > 0) {
-    // Sort the open set by f value (f = g + h) and select the node with the lowest f
-    openSet.sort((a, b) => a.f - b.f);
-    const current = openSet.shift();
-    const { r, c } = current;
-    const currentId = `${r},${c}`;
-
-    if (closedSet.has(currentId)) continue;
-    closedSet.add(currentId);
-
-    // If we've reached the end, we can stop
-    if (r === endR && c === endC) {
-      break;
-    }
-
-    // Explore neighbours
-    const neighbours = getNeighbours(r, c);
-    for (const neighbour of neighbours) {
-      const { r: nr, c: nc } = neighbour;
-
-      if (hexGrid[nr][nc].isNoGo) continue; // Skip blocked cells
-
-      const tentativeG = dist[r][c] + (useDistance ? hexGrid[nr][nc].dValue : hexGrid[nr][nc].eValue);
-
-      if (tentativeG < dist[nr][nc]) {
-        dist[nr][nc] = tentativeG;
-        prev[nr][nc] = { r, c };
-        const f = tentativeG + hexDistance(nr, nc, endR, endC);
-        openSet.push({ r: nr, c: nc, f });
-      }
-    }
-  }
-
-  return { dist, prev };
 }

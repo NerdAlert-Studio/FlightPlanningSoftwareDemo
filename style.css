@@ -1,118 +1,134 @@
 /* Reset some default styles */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  body {
-    font-family: Arial, sans-serif;
-  }
-  
-  /* Toolbar Styling */
-  #toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 5px;
-    padding: 10px;
-    background-color: #f0f0f0;
-    border-bottom: 2px solid #ccc;
-  }
-  
-  #toolbar button {
-    padding: 8px 12px;
-    border: none;
-    background-color: #ddd;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background-color 0.3s;
-    font-size: 14px;
-  }
-  
-  #toolbar button:hover {
-    background-color: #ccc;
-  }
-  
-  #toolbar button.active {
-    background-color: #555;
-    color: white;
-  }
-  
-  #toolbar label {
-    margin-left: 10px;
-    font-weight: bold;
-  }
-  
-  #toolbar select {
-    margin-left: 5px;
-    padding: 5px;
-    border-radius: 4px;
-    border: 1px solid #999;
-    font-size: 14px;
-  }
-  
-  /* Map Container Styling */
-  #map-container {
-    position: relative;
-    width: 100%;
-    max-width: 1000px; /* Adjust based on your image size */
-    margin: 20px auto; /* Center the container with some top and bottom margin */
-    border: 1px solid #ccc;
-    background-color: #e0e0e0;
-    overflow: hidden; /* Hide hexagons that extend beyond the map */
-  }
-  
-  #map-image {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-  
-  /* Hex Cell Styling */
-  .hex-cell {
-    position: absolute;
-    background-color: rgba(238, 210, 110, 0.41); 
-    border: 1px solid #000000;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    clip-path: polygon(
-      50% 0%, 
-      93% 25%, 
-      93% 75%, 
-      50% 100%, 
-      7% 75%, 
-      7% 25%
-    );
-  }
-  
-  .hex-cell:hover {
-    opacity: 0.8;
-  }
-  
-  /* Route Cost Display Styling */
-  #route-cost-display {
-    margin: 10px auto;
-    font-weight: bold;
-    text-align: center;
-    font-size: 18px;
-  }
-  
-  /* Responsive Design */
-  @media (max-width: 768px) {
-    #toolbar {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    
-    #toolbar label, #toolbar select {
-      margin-left: 0;
-      margin-top: 5px;
-    }
-    
-    #map-container {
-      max-width: 100%;
-      margin: 10px;
-    }
-  }
-  
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+}
+
+/* Path Highlighting Classes */
+.path-distance {
+background-color: rgba(255, 255, 0, 0.8) !important; /* more opaque yellow */
+border: 2px solid #FFD700; /* gold border */
+}
+
+.path-energy {
+background-color: rgba(255, 0, 255, 0.8) !important; /* more opaque magenta */
+border: 2px solid #FF00FF; /* magenta border */
+}
+
+
+/* Toolbar Styling */
+#toolbar {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+gap: 5px;
+padding: 10px;
+background-color: #f0f0f0;
+border-bottom: 2px solid #ccc;
+}
+
+#toolbar button {
+padding: 8px 12px;
+border: none;
+background-color: #ddd;
+cursor: pointer;
+border-radius: 4px;
+transition: background-color 0.3s;
+font-size: 14px;
+}
+
+#toolbar button:hover {
+background-color: #ccc;
+}
+
+#toolbar button.active {
+background-color: #555;
+color: white;
+}
+
+#toolbar label {
+margin-left: 10px;
+font-weight: bold;
+}
+
+#toolbar select {
+margin-left: 5px;
+padding: 5px;
+border-radius: 4px;
+border: 1px solid #999;
+font-size: 14px;
+}
+
+/* Map Container Styling */
+#map-container {
+position: relative;
+width: 100%;
+max-width: 1000px; /* Adjust based on your image size */
+margin: 20px auto; /* Center the container with some top and bottom margin */
+border: 1px solid #ccc;
+background-color: #e0e0e0;
+overflow: hidden; /* Hide hexagons that extend beyond the map */
+}
+
+#map-image {
+display: block;
+width: 100%;
+height: auto;
+}
+
+/* Hex Cell Styling */
+.hex-cell {
+position: absolute;
+background-color: rgba(238, 210, 110, 0.41); 
+border: 1px solid #000000;
+cursor: pointer;
+transition: background-color 0.3s, opacity 0.3s;
+clip-path: polygon(
+  50% 0%, 
+  93% 25%, 
+  93% 75%, 
+  50% 100%, 
+  7% 75%, 
+  7% 25%
+);
+}
+
+.hex-cell:hover {
+opacity: 0.8;
+}
+
+.hex-cell.path-distance:hover,
+.hex-cell.path-energy:hover {
+opacity: 1; /* Keep full opacity for path cells */
+}
+
+/* Route Cost Display Styling */
+#route-cost-display {
+margin: 10px auto;
+font-weight: bold;
+text-align: center;
+font-size: 18px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+#toolbar {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+#toolbar label, #toolbar select {
+  margin-left: 0;
+  margin-top: 5px;
+}
+
+#map-container {
+  max-width: 100%;
+  margin: 10px;
+}
+}
